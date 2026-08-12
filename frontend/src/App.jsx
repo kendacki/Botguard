@@ -444,13 +444,13 @@ export default function App() {
           </div>
 
           <motion.div
-            className="relative mx-auto h-[min(48vw,260px)] w-full max-w-5xl overflow-hidden sm:h-[300px] md:h-[360px]"
+            className="relative mx-auto h-[min(52vw,280px)] w-full max-w-6xl overflow-hidden sm:h-[320px] md:h-[390px]"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.8, ease: easeOut }}
             aria-hidden="true"
           >
-            <div className="absolute left-1/2 top-0 w-[min(135vw,820px)] -translate-x-1/2">
+            <div className="absolute left-1/2 top-0 w-[min(150vw,920px)] -translate-x-1/2">
               <HeroScene />
             </div>
           </motion.div>
