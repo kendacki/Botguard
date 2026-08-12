@@ -7,10 +7,11 @@ import {
   Boxes,
   Check,
   ChevronDown,
+  Copy,
   GitBranch,
   Lock,
+  LogOut,
   Shield,
-  Sparkles,
   Wallet,
 } from "lucide-react";
 import Logo from "./components/Logo.jsx";
@@ -103,30 +104,108 @@ export default function App() {
   const [verification, setVerification] = useState(null);
   const [credential, setCredential] = useState(null);
   const [issuers, setIssuers] = useState([]);
-  const [deployment, setDeployment] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [walletError, setWalletError] = useState("");
+  const [walletSuccess, setWalletSuccess] = useState("");
   const [busy, setBusy] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
+  const [manualAddress, setManualAddress] = useState("");
+  const [chainLabel, setChainLabel] = useState("");
+  const [hasInjectedWallet, setHasInjectedWallet] = useState(false);
   const [activeTab, setActiveTab] = useState("issuers");
   const [openFaq, setOpenFaq] = useState(0);
-  const [apiOk, setApiOk] = useState(false);
 
   const active = useMemo(() => tabs.find((t) => t.id === activeTab) || tabs[0], [activeTab]);
   const valid = Boolean(credential?.valid);
+  const connected = Boolean(account && /^0x[a-fA-F0-9]{40}$/.test(account));
+
+  async function loadCredentialFor(address) {
+    try {
+      setCredential(await api(`/credentials/${address}`));
+    } catch {
+      setCredential(null);
+    }
+  }
+
+  async function applyAccount(nextAccount, opts = {}) {
+    const addr = String(nextAccount || "");
+    setAccount(addr);
+    if (!addr) {
+      setCredential(null);
+      setChainLabel("");
+      return;
+    }
+    await loadCredentialFor(addr);
+    if (opts.closeModal) setWalletOpen(false);
+  }
+
+  async function refreshChainLabel() {
+    if (!window.ethereum) {
+      setChainLabel("");
+      return;
+    }
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const network = await provider.getNetwork();
+      const id = Number(network.chainId);
+      const names = {
+        1: "Ethereum",
+        11155111: "Sepolia",
+        31337: "Localhost",
+        8080: "BOT Chain",
+      };
+      setChainLabel(names[id] || `Chain ${id}`);
+    } catch {
+      setChainLabel("");
+    }
+  }
 
   useEffect(() => {
-    api("/healthz")
-      .then(() => setApiOk(true))
-      .catch(() => setApiOk(false));
     api("/issuers")
       .then((d) => setIssuers(Array.isArray(d) ? d : d.issuers || []))
       .catch(() => setIssuers([]));
-    fetch("/deployments/localhost.json")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setDeployment(d))
-      .catch(() => setDeployment(null));
+  }, []);
+
+  useEffect(() => {
+    const eth = window.ethereum;
+    setHasInjectedWallet(Boolean(eth));
+    if (!eth) return undefined;
+
+    let alive = true;
+    (async () => {
+      try {
+        const accounts = await eth.request({ method: "eth_accounts" });
+        if (!alive) return;
+        if (accounts?.[0]) {
+          await applyAccount(accounts[0]);
+          await refreshChainLabel();
+        }
+      } catch {
+        /* ignore restore errors */
+      }
+    })();
+
+    const onAccounts = (accounts) => {
+      applyAccount(accounts?.[0] || "");
+      if (!accounts?.length) {
+        setWalletSuccess("");
+        setWalletError("Wallet disconnected.");
+      }
+    };
+    const onChain = () => {
+      refreshChainLabel();
+    };
+
+    eth.on?.("accountsChanged", onAccounts);
+    eth.on?.("chainChanged", onChain);
+    return () => {
+      alive = false;
+      eth.removeListener?.("accountsChanged", onAccounts);
+      eth.removeListener?.("chainChanged", onChain);
+    };
   }, []);
 
   useEffect(() => {
@@ -157,27 +236,75 @@ export default function App() {
     };
   }, [verificationId, account]);
 
+  function openWalletModal() {
+    setWalletError("");
+    setWalletSuccess("");
+    setManualAddress(account || "");
+    setWalletOpen(true);
+  }
+
   async function connectWallet() {
-    setError("");
-    setSuccess("");
+    setWalletError("");
+    setWalletSuccess("");
+    setConnecting(true);
     try {
       if (!window.ethereum) {
-        setError("No wallet found. Paste an address instead.");
+        setWalletError("No browser wallet found. Install MetaMask or paste an address below.");
         return;
       }
       const provider = new BrowserProvider(window.ethereum);
       const accounts = await provider.send("eth_requestAccounts", []);
-      setAccount(accounts[0]);
-      setSuccess("Wallet connected.");
-      setWalletOpen(false);
-      try {
-        setCredential(await api(`/credentials/${accounts[0]}`));
-      } catch {
-        setCredential(null);
+      if (!accounts?.[0]) {
+        setWalletError("No account returned by the wallet.");
+        return;
       }
+      await applyAccount(accounts[0], { closeModal: true });
+      await refreshChainLabel();
+      setWalletSuccess("Wallet connected.");
     } catch (err) {
-      setError(err.message || "Wallet connection failed.");
+      const code = err?.code;
+      if (code === 4001 || String(err?.message || "").toLowerCase().includes("reject")) {
+        setWalletError("Connection rejected in wallet.");
+      } else {
+        setWalletError(err?.shortMessage || err?.message || "Wallet connection failed.");
+      }
+    } finally {
+      setConnecting(false);
     }
+  }
+
+  async function useManualAddress() {
+    setWalletError("");
+    setWalletSuccess("");
+    const addr = manualAddress.trim();
+    if (!/^0x[a-fA-F0-9]{40}$/.test(addr)) {
+      setWalletError("Enter a valid 0x address.");
+      return;
+    }
+    await applyAccount(addr, { closeModal: true });
+    setChainLabel("Manual");
+    setWalletSuccess("Address ready.");
+  }
+
+  async function copyAddress() {
+    if (!account) return;
+    try {
+      await navigator.clipboard.writeText(account);
+      setWalletSuccess("Address copied.");
+      setWalletError("");
+    } catch {
+      setWalletError("Could not copy address.");
+    }
+  }
+
+  function disconnectWallet() {
+    setAccount("");
+    setManualAddress("");
+    setCredential(null);
+    setChainLabel("");
+    setWalletSuccess("");
+    setWalletError("");
+    setWalletOpen(false);
   }
 
   async function submitVerification() {
@@ -277,8 +404,9 @@ export default function App() {
               <GitBranch size={16} />
               GitHub
             </a>
-            <button type="button" className="btn-primary" onClick={() => setDemoOpen(true)}>
-              Open demo
+            <button type="button" className="btn-primary" onClick={openWalletModal}>
+              <Wallet size={16} />
+              {connected ? shortAddr(account) : "Connect"}
             </button>
           </div>
         </div>
@@ -292,14 +420,6 @@ export default function App() {
             initial="hidden"
             animate="show"
           >
-            <motion.div
-              variants={heroItem}
-              className="mb-4 inline-flex items-center gap-2 rounded-full glass px-3 py-1 text-xs font-medium text-soft"
-            >
-              <Sparkles size={14} />
-              BOT Chain compliance registry
-            </motion.div>
-
             <motion.h1
               variants={heroItem}
               className="text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl"
@@ -334,22 +454,15 @@ export default function App() {
               <motion.button
                 type="button"
                 className="btn-ghost"
-                onClick={() => setWalletOpen(true)}
+                onClick={openWalletModal}
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <Wallet size={16} />
-                Connect wallet
+                {connected ? shortAddr(account) : "Connect wallet"}
               </motion.button>
             </motion.div>
 
-            <motion.div variants={heroItem} className="mt-6 flex flex-wrap items-center gap-3 text-xs text-mute">
-              <StatusPill ok={apiOk} label={apiOk ? "API online" : "API offline"} />
-              {account ? <StatusPill ok label={shortAddr(account)} /> : null}
-              {deployment?.contracts?.CredentialRegistry ? (
-                <StatusPill ok={false} label={`Registry ${shortAddr(deployment.contracts.CredentialRegistry)}`} />
-              ) : null}
-            </motion.div>
           </motion.div>
 
           <HeroScene />
@@ -745,19 +858,90 @@ export default function App() {
       </footer>
 
       {/* Wallet modal */}
-      <Modal open={walletOpen} onClose={() => setWalletOpen(false)} title="Connect wallet">
-        <p className="text-sm text-mute">Use MetaMask or any injected wallet. You can also paste an address in the demo.</p>
-        <Alert type="error">{error}</Alert>
-        <Alert type="success">{success}</Alert>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <button type="button" className="btn-primary" onClick={connectWallet}>
-            <Wallet size={16} />
-            Connect
-          </button>
-          <button type="button" className="btn-ghost" onClick={() => setWalletOpen(false)}>
-            Cancel
-          </button>
-        </div>
+      <Modal
+        open={walletOpen}
+        onClose={() => {
+          setWalletOpen(false);
+          setWalletError("");
+          setWalletSuccess("");
+        }}
+        title={connected ? "Wallet" : "Connect"}
+      >
+        <p className="text-sm text-mute">
+          {hasInjectedWallet
+            ? "Connect with your browser wallet, or paste an address for read-only use."
+            : "No browser wallet detected. Paste an address, or install MetaMask."}
+        </p>
+
+        {connected ? (
+          <div className="mt-4 space-y-3">
+            <div className="glass p-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs text-mute">Connected</p>
+                  <p className="mt-1 font-medium text-ink break-all">{account}</p>
+                </div>
+                <StatusPill ok label={chainLabel || "Ready"} />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="btn-ghost" onClick={copyAddress}>
+                <Copy size={16} />
+                Copy
+              </button>
+              {hasInjectedWallet ? (
+                <button type="button" className="btn-ghost" onClick={connectWallet} disabled={connecting}>
+                  <Wallet size={16} />
+                  {connecting ? "Switching…" : "Switch account"}
+                </button>
+              ) : null}
+              <button type="button" className="btn-ghost" onClick={disconnectWallet}>
+                <LogOut size={16} />
+                Disconnect
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-5 space-y-4">
+            <button
+              type="button"
+              className="btn-primary w-full justify-center"
+              onClick={connectWallet}
+              disabled={connecting || !hasInjectedWallet}
+            >
+              <Wallet size={16} />
+              {connecting ? "Connecting…" : hasInjectedWallet ? "Connect wallet" : "Wallet not available"}
+            </button>
+            {!hasInjectedWallet ? (
+              <a
+                className="btn-ghost w-full justify-center"
+                href="https://metamask.io/download/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Install MetaMask
+              </a>
+            ) : null}
+            <div>
+              <label className="block text-xs font-medium text-mute">
+                Or paste address
+                <input
+                  className="field mt-1.5"
+                  value={manualAddress}
+                  onChange={(e) => setManualAddress(e.target.value)}
+                  placeholder="0x…"
+                  spellCheck={false}
+                />
+              </label>
+              <button type="button" className="btn-ghost mt-3" onClick={useManualAddress}>
+                Use address
+              </button>
+            </div>
+          </div>
+        )}
+
+        <Alert type="error">{walletError}</Alert>
+        <Alert type="success">{walletSuccess}</Alert>
       </Modal>
 
       {/* Demo modal */}
@@ -817,7 +1001,7 @@ export default function App() {
             <button type="button" className="btn-muted" disabled={busy || !valid} onClick={revokeCredential}>
               Revoke
             </button>
-            <button type="button" className="btn-ghost" onClick={() => setWalletOpen(true)}>
+            <button type="button" className="btn-ghost" onClick={openWalletModal}>
               <Wallet size={16} />
               Wallet
             </button>
