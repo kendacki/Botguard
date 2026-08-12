@@ -3,10 +3,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { BrowserProvider, keccak256, toUtf8Bytes } from "ethers";
 import {
   ArrowRight,
+  Building2,
+  Clock3,
   Copy,
   LogOut,
   Minus,
   Plus,
+  ShieldCheck,
   Wallet,
 } from "lucide-react";
 import Logo from "./components/Logo.jsx";
@@ -490,47 +493,182 @@ export default function App() {
 
         {/* Catalog */}
         <section id="catalog" className="mx-auto w-full max-w-6xl px-4 py-12 md:px-6 md:py-16">
-          <h2 className="section-title">Try it live</h2>
-          <p className="section-copy">
-            See issuers and credential status, then run a verification.
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="section-title">Try it live</h2>
+              <p className="section-copy">
+                Open a real registry view. Pick an issuer path, check wallet status, and issue a credential in one flow.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-mute">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-ok/10 px-2.5 py-1 font-medium text-ok">
+                <span className="h-1.5 w-1.5 rounded-full bg-ok" />
+                Registry online
+              </span>
+              {connected ? (
+                <span className="rounded-full bg-brand/10 px-2.5 py-1 font-medium text-brand">
+                  {shortAddr(account)}
+                </span>
+              ) : (
+                <span className="rounded-full bg-white/70 px-2.5 py-1 font-medium">Wallet not linked</span>
+              )}
+            </div>
+          </div>
 
           <div className="panel mt-8 overflow-hidden">
-            <div className="grid md:grid-cols-2">
-              <div className="border-b border-line p-5 md:border-b-0 md:border-r">
-                <h3 className="mb-3 text-sm font-semibold text-ink">Issuers</h3>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
+              <div className="flex items-center gap-2 text-sm">
+                <ShieldCheck size={16} className="text-brand" />
+                <span className="font-semibold text-ink">Credential registry</span>
+                <span className="hidden text-mute sm:inline">· BOT Chain demo</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-mute">
+                <span className="rounded-md bg-brand/10 px-2 py-1 font-semibold text-brand">Live</span>
+                <span className="rounded-md border border-line bg-white/60 px-2 py-1">Read + issue</span>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="border-b border-line p-4 sm:p-5 lg:border-b-0 lg:border-r">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-ink">Trusted issuers</h3>
+                  <span className="text-xs text-mute">
+                    {(issuers.length || 3)} active
+                  </span>
+                </div>
                 <div className="space-y-2.5">
                   {(issuers.length
                     ? issuers
-                    : [{ name: "BOTGUARD Demo Issuer", address: "0x7099…79C8", trustTier: 1, active: true }]
-                  ).map((issuer) => (
-                    <div key={issuer.address} className="rounded-xl bg-white/70 px-3.5 py-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">{issuer.name}</p>
-                          <p className="text-xs text-mute">{shortAddr(issuer.address)}</p>
+                    : [
+                        {
+                          name: "BOTGUARD Demo Issuer",
+                          address: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+                          trustTier: 3,
+                          active: true,
+                        },
+                        {
+                          name: "Lagos RWA Desk",
+                          address: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+                          trustTier: 2,
+                          active: true,
+                        },
+                        {
+                          name: "Compliance Relay",
+                          address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+                          trustTier: 1,
+                          active: true,
+                        },
+                      ]
+                  ).map((issuer) => {
+                    const initial = String(issuer.name || "I").slice(0, 1).toUpperCase();
+                    return (
+                      <div
+                        key={issuer.address}
+                        className="rounded-2xl border border-line/80 bg-white/80 px-3.5 py-3 transition hover:border-brand/25"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-sm font-bold text-brand">
+                            {initial}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="truncate text-sm font-semibold text-ink">{issuer.name}</p>
+                              <span className="rounded-full bg-ok/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ok">
+                                {issuer.active === false ? "Paused" : "Active"}
+                              </span>
+                            </div>
+                            <p className="mt-0.5 font-mono text-[11px] text-mute">{shortAddr(issuer.address)}</p>
+                            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-mute">
+                              <span className="inline-flex items-center gap-1 rounded-md bg-[#f3f0fa] px-2 py-0.5">
+                                <Building2 size={11} />
+                                Trust tier {issuer.trustTier ?? 1}
+                              </span>
+                              <span>Can issue · renew · revoke</span>
+                            </div>
+                          </div>
                         </div>
-                        <span className="shrink-0 text-xs text-mute">Tier {issuer.trustTier}</span>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
-              <div className="p-5">
-                <h3 className="mb-3 text-sm font-semibold text-ink">Credential</h3>
-                <div className="rounded-xl bg-white/70 p-4 text-sm">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-mute">Status</span>
-                    <StatusPill ok={valid} label={valid ? "Valid" : "None"} />
+
+              <div className="p-4 sm:p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-ink">Wallet credential</h3>
+                  <StatusPill ok={valid} label={valid ? "Valid" : connected ? "No credential" : "Idle"} />
+                </div>
+
+                <div className="rounded-2xl border border-line/80 bg-white/80 p-4">
+                  <div className="mb-4 flex items-center gap-3 border-b border-line pb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-white">
+                      <Wallet size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-mute">Holder</p>
+                      <p className="truncate font-mono text-sm font-semibold text-ink">
+                        {connected ? shortAddr(account) : "Connect a wallet to begin"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="space-y-2 text-mute">
-                    <div className="flex justify-between"><span>Tier</span><span className="text-ink">{credential?.tier || "—"}</span></div>
-                    <div className="flex justify-between"><span>Region</span><span className="text-ink">{credential?.jurisdiction || "—"}</span></div>
-                    <div className="flex justify-between"><span>Request</span><span className="text-ink">{verification?.status || "—"}</span></div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="rounded-xl bg-[#faf9fc] px-3 py-2.5">
+                      <p className="text-[11px] text-mute">Investor tier</p>
+                      <p className="mt-0.5 font-semibold text-ink">{credential?.tier || "—"}</p>
+                    </div>
+                    <div className="rounded-xl bg-[#faf9fc] px-3 py-2.5">
+                      <p className="text-[11px] text-mute">Region</p>
+                      <p className="mt-0.5 font-semibold text-ink">{credential?.jurisdiction || "—"}</p>
+                    </div>
+                    <div className="rounded-xl bg-[#faf9fc] px-3 py-2.5">
+                      <p className="text-[11px] text-mute">Request</p>
+                      <p className="mt-0.5 font-semibold text-ink">{verification?.status || "Ready"}</p>
+                    </div>
+                    <div className="rounded-xl bg-[#faf9fc] px-3 py-2.5">
+                      <p className="text-[11px] text-mute">Expires</p>
+                      <p className="mt-0.5 font-semibold text-ink">
+                        {credential?.expiresAt
+                          ? new Date(credential.expiresAt).toLocaleDateString()
+                          : "—"}
+                      </p>
+                    </div>
                   </div>
-                  <button type="button" className="btn-primary mt-4 w-full" onClick={() => setDemoOpen(true)}>
-                    Run verification
-                  </button>
+
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-start gap-2 text-xs text-mute">
+                      <Clock3 size={13} className="mt-0.5 shrink-0 text-brand" />
+                      <span>
+                        {valid
+                          ? "This wallet can pass ComplianceGate checks on gated RWA transfers."
+                          : "No valid credential yet. Run verification to post a hashed commitment on chain."}
+                      </span>
+                    </div>
+                    <div className="rounded-xl border border-dashed border-line px-3 py-2 font-mono text-[11px] text-mute">
+                      commitment · {valid ? "0x" + String(account || "demo").slice(2, 10) + "…hashed" : "awaiting issue"}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                    {connected ? (
+                      <button type="button" className="btn-primary flex-1" onClick={() => setDemoOpen(true)}>
+                        Run verification
+                        <ArrowRight size={16} />
+                      </button>
+                    ) : (
+                      <button type="button" className="btn-primary flex-1" onClick={openWalletModal}>
+                        <Wallet size={16} />
+                        Connect to verify
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-ghost flex-1"
+                      onClick={() => setDemoOpen(true)}
+                    >
+                      Open demo
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
