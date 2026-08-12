@@ -8,9 +8,10 @@ import {
   Check,
   ChevronDown,
   Copy,
-  GitBranch,
   Lock,
   LogOut,
+  Minus,
+  Plus,
   Shield,
   Wallet,
 } from "lucide-react";
@@ -67,19 +68,23 @@ const tabs = [
 const faqs = [
   {
     q: "What is BOTGUARD?",
-    a: "A shared compliance registry for BOT Chain RWA apps. Verify a wallet once. Reuse that status across gated assets.",
+    a: "A shared compliance registry for BOT Chain RWA apps. Verify a wallet once, then reuse that status across gated assets without rebuilding KYC for every token.",
   },
   {
     q: "Does identity go on chain?",
-    a: "No. Only a hash commitment, investor tier, region code, expiry, and revoke state are written.",
+    a: "No. Only a hash commitment, investor tier, region code, expiry, and revoke state are written. Personal data stays off chain with the issuer.",
   },
   {
     q: "Who can revoke a credential?",
-    a: "The issuer, governance, or an authorized monitor relay. The monitor path uses a two signal rule.",
+    a: "The issuer, governance, or an authorized monitor relay. The monitor path requires two independent signals before access is cut.",
   },
   {
     q: "How do RWA tokens integrate?",
-    a: "Point ComplianceGate at CredentialRegistry and call isValid in transfer hooks. Frontends can precheck first.",
+    a: "Point ComplianceGate at CredentialRegistry and call isValid in transfer hooks. Frontends can precheck status before users submit a transaction.",
+  },
+  {
+    q: "What happens when a credential expires?",
+    a: "Gates treat it as invalid until the issuer renews. Apps can surface expiry early so holders re-verify before transfers fail.",
   },
 ];
 
@@ -383,27 +388,18 @@ export default function App() {
   return (
     <div className="min-h-screen bg-white text-ink">
       <header className="sticky top-0 z-40 border-b border-line bg-white/70 backdrop-blur-glass">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6">
-          <a href="#top" className="inline-flex items-center gap-2.5">
+        <div className="mx-auto grid h-16 w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center px-4 md:px-6">
+          <a href="#top" className="inline-flex items-center gap-2.5 justify-self-start">
             <Logo className="h-8 w-8" />
             <span className="text-sm font-semibold tracking-wide">BOTGUARD</span>
           </a>
-          <nav className="hidden items-center gap-6 text-sm text-mute md:flex">
-            <a href="#product" className="hover:text-brand">Product</a>
-            <a href="#catalog" className="hover:text-brand">Catalog</a>
-            <a href="#flow" className="hover:text-brand">Flow</a>
-            <a href="#faq" className="hover:text-brand">FAQs</a>
+          <nav className="hidden items-center justify-center gap-8 text-sm font-medium text-mute md:flex">
+            <a href="#product" className="transition hover:text-brand">Product</a>
+            <a href="#catalog" className="transition hover:text-brand">Catalog</a>
+            <a href="#flow" className="transition hover:text-brand">Flow</a>
+            <a href="#faq" className="transition hover:text-brand">FAQs</a>
           </nav>
-          <div className="flex items-center gap-2">
-            <a
-              className="btn-ghost hidden sm:inline-flex"
-              href="https://github.com/kendacki/Botguard"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <GitBranch size={16} />
-              GitHub
-            </a>
+          <div className="justify-self-end">
             <button type="button" className="btn-primary" onClick={openWalletModal}>
               <Wallet size={16} />
               {connected ? shortAddr(account) : "Connect"}
@@ -722,36 +718,76 @@ export default function App() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 md:py-20">
-          <h2 className="section-title">FAQs</h2>
-          <div className="panel mt-8 divide-y divide-line overflow-hidden">
-            {faqs.map((item, idx) => {
-              const open = openFaq === idx;
-              return (
-                <div key={item.q}>
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
-                    onClick={() => setOpenFaq(open ? -1 : idx)}
+        <section id="faq" className="relative overflow-hidden border-t border-line bg-[#faf9fc] py-16 md:py-24">
+          <div
+            className="pointer-events-none absolute inset-0"
+            aria-hidden="true"
+            style={{
+              background:
+                "radial-gradient(ellipse 50% 40% at 50% 0%, rgba(138,63,252,0.07), transparent 70%)",
+            }}
+          />
+          <div className="relative mx-auto w-full max-w-3xl px-4 md:px-6">
+            <div className="text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">Support</p>
+              <h2 className="section-title mt-3">Questions, answered.</h2>
+              <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-mute">
+                Clear answers on how BOTGUARD verifies wallets, keeps identity off chain, and gates RWA transfers.
+              </p>
+            </div>
+
+            <div className="mt-10 space-y-3">
+              {faqs.map((item, idx) => {
+                const open = openFaq === idx;
+                return (
+                  <motion.div
+                    key={item.q}
+                    className={`overflow-hidden rounded-2xl border bg-white transition-shadow ${
+                      open
+                        ? "border-brand/25 shadow-[0_12px_40px_rgba(138,63,252,0.1)]"
+                        : "border-neutral-200/80 hover:border-neutral-300"
+                    }`}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ delay: idx * 0.04 }}
                   >
-                    <span className="text-sm font-semibold md:text-base">{item.q}</span>
-                    <ChevronDown size={18} className={`shrink-0 text-mute transition ${open ? "rotate-180" : ""}`} />
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {open ? (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-4 px-5 py-5 text-left md:px-6"
+                      onClick={() => setOpenFaq(open ? -1 : idx)}
+                      aria-expanded={open}
+                    >
+                      <span
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition ${
+                          open ? "bg-brand text-white" : "bg-[#f3f0fa] text-brand"
+                        }`}
                       >
-                        <p className="px-5 pb-4 text-sm text-mute">{item.a}</p>
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
+                        {open ? <Minus size={16} strokeWidth={2.4} /> : <Plus size={16} strokeWidth={2.4} />}
+                      </span>
+                      <span className="flex-1 text-[15px] font-semibold leading-snug text-ink md:text-base">
+                        {item.q}
+                      </span>
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {open ? (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                          className="overflow-hidden"
+                        >
+                          <p className="border-t border-neutral-100 px-5 pb-5 pt-4 text-sm leading-relaxed text-mute md:px-6 md:pl-[4.25rem]">
+                            {item.a}
+                          </p>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
         </section>
 
