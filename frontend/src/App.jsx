@@ -660,25 +660,20 @@ export default function App() {
           <p className="section-copy">From wallet connect to gated transfer without a custom compliance stack.</p>
           <div className="mt-8 grid gap-4 md:grid-cols-4">
             {[
-              { n: "1", t: "Connect", d: "Link a wallet or paste an address.", icon: "/illustrations/wallet.svg" },
-              { n: "2", t: "Verify", d: "Issuer posts a hashed commitment.", icon: "/illustrations/fingerprint.svg" },
-              { n: "3", t: "Confirm", d: "Credential lands in the registry.", icon: "/illustrations/file-check.svg" },
-              { n: "4", t: "Gate", d: "RWA transfers check isValid.", icon: "/illustrations/gate.svg" },
+              { t: "Connect", d: "Link a wallet or paste an address.", icon: "/illustrations/wallet.svg" },
+              { t: "Verify", d: "Issuer posts a hashed commitment.", icon: "/illustrations/fingerprint.svg" },
+              { t: "Confirm", d: "Credential lands in the registry.", icon: "/illustrations/file-check.svg" },
+              { t: "Gate", d: "RWA transfers check isValid.", icon: "/illustrations/gate.svg" },
             ].map((step, i) => (
               <motion.div
-                key={step.n}
+                key={step.t}
                 className="panel p-5"
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.4 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <div className="mb-4 flex items-center justify-between">
-                  <img src={step.icon} alt="" className="h-10 w-10" loading="lazy" />
-                  <div className="flex h-9 w-9 items-center justify-center rounded-btn bg-brand text-sm font-bold text-white">
-                    {step.n}
-                  </div>
-                </div>
+                <img src={step.icon} alt="" className="mb-4 h-10 w-10" loading="lazy" />
                 <h3 className="font-semibold">{step.t}</h3>
                 <p className="mt-1 text-sm text-mute">{step.d}</p>
               </motion.div>
