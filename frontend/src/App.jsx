@@ -617,21 +617,85 @@ export default function App() {
         </section>
       </main>
 
-      <footer className="border-t border-line py-10">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 md:flex-row md:items-center md:justify-between md:px-6">
-          <div className="flex items-center gap-2.5">
-            <Logo className="h-7 w-7" />
-            <div>
-              <p className="text-sm font-semibold">BOTGUARD</p>
-              <p className="text-xs text-mute">Compliance registry for BOT Chain RWA</p>
+      <footer className="relative overflow-hidden bg-[#f7f7f7]">
+        <div className="relative z-10 mx-auto max-w-6xl px-4 pb-4 pt-20 sm:px-6 lg:px-8">
+          <div className="rounded-[2rem] border border-neutral-200/70 bg-white px-8 py-12 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_20px_64px_rgba(0,0,0,0.07)] sm:px-12 sm:py-14">
+            <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.55fr)_1fr_1fr] lg:gap-14">
+              <div className="sm:col-span-2 lg:col-span-1">
+                <a href="#top" className="inline-flex items-center gap-3" aria-label="BOTGUARD home">
+                  <Logo className="h-7 w-7" />
+                  <span className="text-base font-bold tracking-tight text-ink">BOTGUARD</span>
+                </a>
+                <p className="mt-5 max-w-xs text-sm leading-relaxed text-neutral-500">
+                  Compliance registry for BOT Chain RWA. Verify once, gate transfers, and keep identity off chain.
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-ink">Product</p>
+                <ul className="mt-4 space-y-3">
+                  <li>
+                    <a href="#product" className="text-sm text-neutral-500 transition-colors hover:text-ink">
+                      Registry
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#catalog" className="text-sm text-neutral-500 transition-colors hover:text-ink">
+                      Catalog
+                    </a>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => setDemoOpen(true)}
+                      className="text-sm text-neutral-500 transition-colors hover:text-ink"
+                    >
+                      Demo
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-ink">Platform</p>
+                <ul className="mt-4 space-y-3">
+                  <li>
+                    <a href="#flow" className="text-sm text-neutral-500 transition-colors hover:text-ink">
+                      Flow
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#faq" className="text-sm text-neutral-500 transition-colors hover:text-ink">
+                      FAQs
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://github.com/kendacki/Botguard"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-neutral-500 transition-colors hover:text-ink"
+                    >
+                      GitHub
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-12 border-t border-neutral-200 pt-8">
+              <p className="text-sm text-neutral-500">© 2026 BOTGUARD. Built for BOT Chain.</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-4 text-sm text-mute">
-            <a href="#product" className="hover:text-brand">Product</a>
-            <a href="#catalog" className="hover:text-brand">Catalog</a>
-            <a href="#faq" className="hover:text-brand">FAQs</a>
-            <a href="#flow" className="hover:text-brand">Flow</a>
-          </div>
+        </div>
+
+        <div
+          className="pointer-events-none relative -mt-6 flex justify-center overflow-hidden pb-2 pt-4 sm:-mt-10"
+          aria-hidden="true"
+        >
+          <span className="translate-y-[32%] select-none whitespace-nowrap text-[clamp(4.5rem,20vw,12.5rem)] font-bold leading-[0.85] tracking-[-0.045em] text-neutral-200/95">
+            BOTGUARD
+          </span>
         </div>
       </footer>
 
