@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 
-export default function Modal({ open, onClose, title, children }) {
+export default function Modal({ open, onClose, title, children, size = "md" }) {
+  const maxWidth = size === "sm" ? "max-w-[320px]" : "max-w-[400px]";
   return (
     <AnimatePresence>
       {open ? (
@@ -22,7 +23,7 @@ export default function Modal({ open, onClose, title, children }) {
             aria-modal="true"
             aria-labelledby={title ? "modal-title" : undefined}
             aria-label={title ? undefined : "Dialog"}
-            className="relative z-10 w-full max-w-[400px] overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-[0_16px_48px_rgba(0,0,0,0.14)] outline-none ring-0"
+            className={`relative z-10 w-full ${maxWidth} overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-[0_16px_48px_rgba(0,0,0,0.14)] outline-none ring-0`}
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
@@ -47,7 +48,7 @@ export default function Modal({ open, onClose, title, children }) {
                 <X size={16} />
               </button>
             </div>
-            <div className="px-4 py-3.5">{children}</div>
+            <div className="px-4 pb-3.5 pt-1">{children}</div>
           </motion.div>
         </motion.div>
       ) : null}

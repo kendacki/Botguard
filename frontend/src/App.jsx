@@ -990,108 +990,99 @@ export default function App() {
           setWalletError("");
           setWalletSuccess("");
         }}
-        title={connected ? "Wallet" : undefined}
+        title={undefined}
+        size={connected ? "sm" : "md"}
       >
-        <div className="space-y-3">
-          <p className="text-xs leading-relaxed text-mute">
-            {connected
-              ? "Manage this session. Switching accounts refreshes credential status."
-              : hasInjectedWallet
-                ? "Connect your browser wallet to open Home, Status, Verify, and Help."
-                : "No browser wallet found. Paste an address for read-only access, or install MetaMask."}
-          </p>
-
-          {connected ? (
-            <>
-              <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-mute">
-                      Connected
-                    </p>
-                    <p className="mt-1 break-all font-mono text-xs font-medium leading-snug text-ink">
-                      {account}
-                    </p>
-                  </div>
-                  <StatusPill ok label={chainLabel || "Ready"} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" className="btn-ghost h-9 px-3 text-xs" onClick={copyAddress}>
-                  <Copy size={14} />
-                  Copy
-                </button>
-                {hasInjectedWallet ? (
-                  <button
-                    type="button"
-                    className="btn-ghost h-9 px-3 text-xs"
-                    onClick={connectWallet}
-                    disabled={connecting}
-                  >
-                    <Wallet size={14} />
-                    {connecting ? "Switching…" : "Switch"}
-                  </button>
+        {connected ? (
+          <div className="space-y-3 pt-0.5">
+            <div className="flex items-center gap-2.5 rounded-xl bg-neutral-50 px-3 py-2.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand ring-1 ring-neutral-200/80">
+                <Wallet size={15} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-mono text-sm font-semibold tracking-tight text-ink">
+                  {shortAddr(account)}
+                </p>
+                {chainLabel ? (
+                  <p className="mt-0.5 text-[11px] text-mute">{chainLabel}</p>
                 ) : null}
-                <button
-                  type="button"
-                  className={`btn-ghost h-9 px-3 text-xs ${hasInjectedWallet ? "col-span-2" : ""}`}
-                  onClick={disconnectWallet}
-                >
-                  <LogOut size={14} />
-                  Disconnect
-                </button>
               </div>
-            </>
-          ) : (
-            <>
               <button
                 type="button"
-                className="btn-primary h-10 w-full justify-center text-sm"
-                onClick={connectWallet}
-                disabled={connecting || !hasInjectedWallet}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-mute transition hover:bg-white hover:text-ink"
+                onClick={copyAddress}
+                aria-label="Copy address"
+                title="Copy address"
               >
-                <Wallet size={15} />
-                {connecting
-                  ? "Connecting…"
-                  : hasInjectedWallet
-                    ? "Connect wallet"
-                    : "Wallet not available"}
+                <Copy size={14} />
               </button>
-              {!hasInjectedWallet ? (
-                <a
-                  className="btn-ghost h-9 w-full justify-center text-xs"
-                  href="https://metamask.io/download/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Install MetaMask
-                </a>
-              ) : null}
-              <div className="rounded-xl border border-neutral-100 bg-neutral-50/80 p-2.5">
-                <label className="block text-[10px] font-medium uppercase tracking-wide text-mute">
-                  Or paste address
-                  <input
-                    className="field mt-1.5 h-9 rounded-lg px-3 py-1.5 text-xs"
-                    value={manualAddress}
-                    onChange={(e) => setManualAddress(e.target.value)}
-                    placeholder="0x…"
-                    spellCheck={false}
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="btn-ghost mt-2 h-9 w-full justify-center text-xs"
-                  onClick={useManualAddress}
-                >
-                  Use address
-                </button>
-              </div>
-            </>
-          )}
+            </div>
 
-          <Alert type="error">{walletError}</Alert>
-          <Alert type="success">{walletSuccess}</Alert>
-        </div>
+            <button
+              type="button"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800"
+              onClick={disconnectWallet}
+            >
+              <LogOut size={15} />
+              Disconnect
+            </button>
+
+            <Alert type="error">{walletError}</Alert>
+            <Alert type="success">{walletSuccess}</Alert>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs leading-relaxed text-mute">
+              {hasInjectedWallet
+                ? "Connect your browser wallet to open Home, Status, Verify, and Help."
+                : "No browser wallet found. Paste an address for read-only access, or install MetaMask."}
+            </p>
+            <button
+              type="button"
+              className="btn-primary h-10 w-full justify-center text-sm"
+              onClick={connectWallet}
+              disabled={connecting || !hasInjectedWallet}
+            >
+              <Wallet size={15} />
+              {connecting
+                ? "Connecting…"
+                : hasInjectedWallet
+                  ? "Connect wallet"
+                  : "Wallet not available"}
+            </button>
+            {!hasInjectedWallet ? (
+              <a
+                className="btn-ghost h-9 w-full justify-center text-xs"
+                href="https://metamask.io/download/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Install MetaMask
+              </a>
+            ) : null}
+            <div className="rounded-xl border border-neutral-100 bg-neutral-50/80 p-2.5">
+              <label className="block text-[10px] font-medium uppercase tracking-wide text-mute">
+                Or paste address
+                <input
+                  className="field mt-1.5 h-9 rounded-lg px-3 py-1.5 text-xs"
+                  value={manualAddress}
+                  onChange={(e) => setManualAddress(e.target.value)}
+                  placeholder="0x…"
+                  spellCheck={false}
+                />
+              </label>
+              <button
+                type="button"
+                className="btn-ghost mt-2 h-9 w-full justify-center text-xs"
+                onClick={useManualAddress}
+              >
+                Use address
+              </button>
+            </div>
+            <Alert type="error">{walletError}</Alert>
+            <Alert type="success">{walletSuccess}</Alert>
+          </div>
+        )}
       </Modal>
     </div>
   );
