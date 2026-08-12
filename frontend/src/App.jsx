@@ -818,15 +818,6 @@ export default function App() {
                       Catalog
                     </a>
                   </li>
-                  <li>
-                    <button
-                      type="button"
-                      onClick={openWalletModal}
-                      className="text-sm text-neutral-500 transition-colors hover:text-ink"
-                    >
-                      Connect
-                    </button>
-                  </li>
                 </ul>
               </div>
 
