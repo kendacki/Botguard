@@ -6,7 +6,6 @@ import {
   BadgeCheck,
   Boxes,
   Check,
-  ChevronDown,
   Copy,
   Lock,
   LogOut,
