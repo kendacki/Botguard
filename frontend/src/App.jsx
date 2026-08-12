@@ -600,21 +600,46 @@ export default function App() {
         </section>
 
         {/* Audience */}
-        <section className="border-y border-line bg-white/40 py-12 md:py-16">
-          <div className="mx-auto grid w-full max-w-6xl gap-4 px-4 sm:grid-cols-2 md:px-6">
-            <div className="panel p-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-brand">Issuers</p>
-              <h3 className="mt-2 text-xl font-bold md:text-2xl">Attest wallets</h3>
-              <p className="mt-2 text-sm leading-relaxed text-mute">
-                Submit a hash, set tier and region, then renew or revoke when risk changes.
-              </p>
-            </div>
-            <div className="panel p-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-brand">Builders</p>
-              <h3 className="mt-2 text-xl font-bold md:text-2xl">Gate transfers</h3>
-              <p className="mt-2 text-sm leading-relaxed text-mute">
-                Plug into ComplianceGate, check status in your app, and fail closed on chain.
-              </p>
+        <section className="border-y border-line bg-white/40 py-10 md:py-12">
+          <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
+            <div className="panel overflow-hidden">
+              <div className="grid sm:grid-cols-2">
+                {[
+                  {
+                    role: "Issuers",
+                    title: "Attest wallets",
+                    body: "Hash once. Set tier and region. Renew or revoke when risk changes.",
+                    steps: ["Issue", "Renew", "Revoke"],
+                  },
+                  {
+                    role: "Builders",
+                    title: "Gate transfers",
+                    body: "Hook ComplianceGate. Check status in-app. Fail closed on chain.",
+                    steps: ["Integrate", "Precheck", "Enforce"],
+                  },
+                ].map((item, i) => (
+                  <div
+                    key={item.role}
+                    className={`p-5 sm:p-6 ${i === 0 ? "border-b border-line sm:border-b-0 sm:border-r" : ""}`}
+                  >
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-brand">{item.role}</p>
+                      <div className="flex gap-1.5">
+                        {item.steps.map((step) => (
+                          <span
+                            key={step}
+                            className="rounded-md bg-[#f3f0fa] px-2 py-0.5 text-[10px] font-medium text-mute"
+                          >
+                            {step}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <h3 className="mt-2 text-lg font-bold tracking-tight md:text-xl">{item.title}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-mute">{item.body}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
