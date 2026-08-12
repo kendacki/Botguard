@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
+  <defs>
+    <linearGradient id="dashStatusG" x1="20" y1="24" x2="136" y2="136" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8A3FFC"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="54" fill="url(#dashStatusG)" opacity="0.12"/>
+  <path d="M80 30l38 14v30c0 26-16 44-38 52-22-8-38-26-38-52V44L80 30Z" fill="url(#dashStatusG)"/>
+  <path d="M62 80l12 12 24-28" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

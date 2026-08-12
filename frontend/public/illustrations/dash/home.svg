@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
+  <defs>
+    <linearGradient id="dashHomeG" x1="24" y1="20" x2="140" y2="140" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8A3FFC"/>
+      <stop offset="1" stop-color="#B57BFF"/>
+    </linearGradient>
+  </defs>
+  <rect x="28" y="36" width="104" height="88" rx="22" fill="url(#dashHomeG)" opacity="0.14"/>
+  <rect x="40" y="48" width="80" height="64" rx="16" fill="url(#dashHomeG)" opacity="0.22"/>
+  <path d="M80 44c-18 0-32 12-32 28v8c0 4 2 7 5 9l4 2v9c0 3 2 5 5 5h36c3 0 5-2 5-5v-9l4-2c3-2 5-5 5-9v-8c0-16-14-28-32-28Z" fill="url(#dashHomeG)"/>
+  <circle cx="80" cy="70" r="10" fill="#fff" opacity="0.95"/>
+  <path d="M66 96c2-8 8-12 14-12s12 4 14 12" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+</svg>
