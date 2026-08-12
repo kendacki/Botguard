@@ -4,23 +4,54 @@ const hre = require("hardhat");
 
 async function main() {
   const signers = await hre.ethers.getSigners();
-  const [deployer, issuer, monitor, holder] = signers;
-  const treasurySigner = signers[4];
+  if (!signers.length) {
+    throw new Error(
+      "No deployer account. Set DEPLOYER_PRIVATE_KEY in .env for botchainTestnet."
+    );
+  }
+
+  const isLocal = ["hardhat", "localhost"].includes(hre.network.name);
+  const deployer = signers[0];
+  const issuer = isLocal && signers[1] ? signers[1] : deployer;
+  const monitor = isLocal && signers[2] ? signers[2] : deployer;
+  const holder = isLocal && signers[3] ? signers[3] : deployer;
+
+  console.log("Network:", hre.network.name);
   console.log("Deploying BOTGUARD with:", deployer.address);
 
-  const treasuryAddress =
-    process.env.TREASURY_ADDRESS && process.env.TREASURY_ADDRESS !== deployer.address
-      ? process.env.TREASURY_ADDRESS
-      : treasurySigner.address;
+  let treasuryAddress = process.env.TREASURY_ADDRESS;
+  if (!treasuryAddress) {
+    if (isLocal && signers[4]) {
+      treasuryAddress = signers[4].address;
+    } else {
+      throw new Error(
+        "TREASURY_ADDRESS is required for online deploy and must differ from the deployer."
+      );
+    }
+  }
 
   if (treasuryAddress.toLowerCase() === deployer.address.toLowerCase()) {
     throw new Error("TREASURY_ADDRESS must be distinct from governance/deployer");
   }
 
-  // BOT uses 18 decimals (same as ether units); 0.5 BOT = 5e17 wei
-  const verificationFee = process.env.VERIFICATION_FEE
-    ? BigInt(process.env.VERIFICATION_FEE)
-    : hre.ethers.parseEther("0.5");
+  // BOT uses 18 decimals; accept wei integer or ether decimal string (e.g. "0.5")
+  let verificationFee;
+  if (process.env.VERIFICATION_FEE) {
+    const raw = String(process.env.VERIFICATION_FEE).trim();
+    verificationFee = raw.includes(".")
+      ? hre.ethers.parseEther(raw)
+      : BigInt(raw);
+  } else {
+    verificationFee = hre.ethers.parseEther("0.5");
+  }
+
+  const bal = await hre.ethers.provider.getBalance(deployer.address);
+  console.log("Deployer balance:", hre.ethers.formatEther(bal), "BOT");
+  if (bal === 0n) {
+    throw new Error(
+      "Deployer has 0 balance. Fund it from the BOT testnet faucet (https://dev-docs.botchain.ai), then retry."
+    );
+  }
 
   const IssuerRegistry = await hre.ethers.getContractFactory("IssuerRegistry");
   const issuerRegistry = await IssuerRegistry.deploy(deployer.address);
@@ -54,7 +85,7 @@ async function main() {
   const rwaTokenAddress = await rwaToken.getAddress();
   console.log("ExampleRWAToken:", rwaTokenAddress);
 
-  // Seed a demo credential for holder so gated-transfer demos work immediately.
+  // Seed a demo credential so gated-transfer demos work immediately.
   const commitment = hre.ethers.keccak256(hre.ethers.toUtf8Bytes("demo-verification-record"));
   const jurisdiction = hre.ethers.hexlify(hre.ethers.toUtf8Bytes("NG"));
   await (
@@ -64,9 +95,15 @@ async function main() {
   ).wait();
   await (await rwaToken.mint(holder.address, hre.ethers.parseEther("1000"))).wait();
 
+  const network = await hre.ethers.provider.getNetwork();
+  const rpc =
+    process.env.BOTCHAIN_TESTNET_RPC ||
+    (isLocal ? "http://127.0.0.1:8545" : "https://rpc.bohr.life");
+
   const deployment = {
     network: hre.network.name,
-    chainId: (await hre.ethers.provider.getNetwork()).chainId.toString(),
+    chainId: network.chainId.toString(),
+    explorer: isLocal ? null : "https://scan.bohr.life",
     deployer: deployer.address,
     issuer: issuer.address,
     monitor: monitor.address,
@@ -93,7 +130,7 @@ async function main() {
   const outPath = path.join(outDir, `${hre.network.name}.json`);
   fs.writeFileSync(outPath, JSON.stringify(deployment, null, 2));
 
-  const envPath = path.join(__dirname, "..", "deployments", `${hre.network.name}.env`);
+  const envPath = path.join(outDir, `${hre.network.name}.env`);
   fs.writeFileSync(
     envPath,
     [
@@ -102,13 +139,22 @@ async function main() {
       `EXAMPLE_RWA_TOKEN_ADDRESS=${rwaTokenAddress}`,
       `TREASURY_ADDRESS=${treasuryAddress}`,
       `VERIFICATION_FEE=${verificationFee.toString()}`,
-      `CHAIN_RPC_URL=http://127.0.0.1:8545`,
-      `BOTCHAIN_TESTNET_RPC=http://127.0.0.1:8545`,
+      `CHAIN_RPC_URL=${rpc}`,
+      `BOTCHAIN_TESTNET_RPC=${rpc}`,
+      `BOTCHAIN_CHAIN_ID=${network.chainId.toString()}`,
     ].join("\n") + "\n"
   );
 
+  // Keep frontend in sync for local + testnet demos
+  const frontendDir = path.join(__dirname, "..", "frontend", "public", "deployments");
+  fs.mkdirSync(frontendDir, { recursive: true });
+  fs.writeFileSync(path.join(frontendDir, `${hre.network.name}.json`), JSON.stringify(deployment, null, 2));
+
   console.log("Wrote", outPath);
   console.log("Wrote", envPath);
+  if (!isLocal) {
+    console.log("Explorer:", `https://scan.bohr.life/address/${credentialRegistryAddress}`);
+  }
 }
 
 main().catch((error) => {

@@ -18,9 +18,9 @@ module.exports = {
       chainId: 31337,
     },
     botchainTestnet: {
-      url: process.env.BOTCHAIN_TESTNET_RPC || "https://testnet-rpc.botchain.example",
+      url: process.env.BOTCHAIN_TESTNET_RPC || "https://rpc.bohr.life",
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
-      chainId: Number(process.env.BOTCHAIN_CHAIN_ID || 8080),
+      chainId: Number(process.env.BOTCHAIN_CHAIN_ID || 968),
     },
   },
   paths: {

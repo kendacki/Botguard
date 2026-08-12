@@ -12,6 +12,7 @@
     "test:contracts": "hardhat test",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost && node scripts/copy-deployment-to-frontend.js",
     "deploy:hardhat": "hardhat run scripts/deploy.js --network hardhat && node scripts/copy-deployment-to-frontend.js",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network botchainTestnet",
     "node": "hardhat node",
     "api": "node services/api/server.js",
     "worker": "node services/worker/worker.js",

@@ -1,0 +1,24 @@
+{
+  "network": "botchainTestnet",
+  "chainId": "968",
+  "explorer": "https://scan.bohr.life",
+  "deployer": "0xEfB3Ced6e05F0e347cee606c35131417dcB1a2B7",
+  "issuer": "0xEfB3Ced6e05F0e347cee606c35131417dcB1a2B7",
+  "monitor": "0xEfB3Ced6e05F0e347cee606c35131417dcB1a2B7",
+  "holder": "0xEfB3Ced6e05F0e347cee606c35131417dcB1a2B7",
+  "treasury": "0x4b20FACB4a1c834e6cBEAeeE8FFAe3330aBAb4bD",
+  "verificationFee": "500000000000000000",
+  "contracts": {
+    "IssuerRegistry": "0x1eCc7c37E9074D5aE6C47a4ED21c4dFCd759e6CD",
+    "CredentialRegistry": "0xfcdD8c5823dcDEE47836bfbAd03A425DFd1C0fe5",
+    "ExampleRWAToken": "0x8b54AB355FeAa0cd7b8726DE4Cd2B163C5cf38c3"
+  },
+  "env": {
+    "ISSUER_REGISTRY_ADDRESS": "0x1eCc7c37E9074D5aE6C47a4ED21c4dFCd759e6CD",
+    "CREDENTIAL_REGISTRY_ADDRESS": "0xfcdD8c5823dcDEE47836bfbAd03A425DFd1C0fe5",
+    "EXAMPLE_RWA_TOKEN_ADDRESS": "0x8b54AB355FeAa0cd7b8726DE4Cd2B163C5cf38c3",
+    "TREASURY_ADDRESS": "0x4b20FACB4a1c834e6cBEAeeE8FFAe3330aBAb4bD",
+    "VERIFICATION_FEE": "500000000000000000"
+  },
+  "deployedAt": "2026-08-12T21:46:29.202Z"
+}
