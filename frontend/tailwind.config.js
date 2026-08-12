@@ -17,6 +17,7 @@ export default {
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', "ui-sans-serif", "system-ui", "sans-serif"],
+        poppins: ['"Poppins"', "ui-sans-serif", "system-ui", "sans-serif"],
       },
       borderRadius: {
         btn: "12px",

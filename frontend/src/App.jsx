@@ -4,9 +4,13 @@ import { BrowserProvider, keccak256, toUtf8Bytes } from "ethers";
 import {
   ArrowRight,
   Copy,
+  FileSearch,
+  HelpCircle,
+  Home,
   LogOut,
   Minus,
   Plus,
+  ShieldCheck,
   Star,
   Wallet,
 } from "lucide-react";
@@ -59,27 +63,27 @@ const features = [
 const faqs = [
   {
     q: "What is BOTGUARD?",
-    a: "A shared check for BOT Chain assets. Verify a wallet once, then use that status across apps.",
+    a: "Your shared compliance pass for BOT Chain. Verify a wallet once, then every gated app and token can trust the same answer.",
   },
   {
     q: "Is my identity stored on chain?",
-    a: "No. Only a hash, tier, region, expiry, and revoke status go on chain. Personal details stay with the issuer.",
+    a: "No. Only a hash, tier, region, expiry, and revoke flag go on chain. Your personal details stay with the issuer — off chain.",
   },
   {
     q: "Who can revoke access?",
-    a: "The issuer, governance, or a monitor that needs two matching risk signals.",
+    a: "The issuer, governance, or a monitor that sees two matching risk signals. Revoke stops gated transfers immediately.",
   },
   {
-    q: "How do tokens use it?",
-    a: "Tokens call isValid before a transfer. Apps can also check status first in the UI.",
+    q: "How do tokens use my pass?",
+    a: "Tokens call isValid before a transfer. Apps can also check status in the UI so users know why a move is blocked.",
   },
   {
-    q: "What if a credential expires?",
-    a: "Transfers fail until it is renewed. Apps can warn users before that happens.",
+    q: "What happens when a credential expires?",
+    a: "Transfers fail until you renew. Refresh Status anytime, then submit Verify again with your tier and region.",
   },
   {
     q: "What should I do after connecting?",
-    a: "Open Verify, choose your tier and region, then submit. Use Status anytime to refresh the result.",
+    a: "Open Verify, pick your tier and region, and submit. Use Status to confirm it landed. Help has more if you get stuck.",
   },
 ];
 
@@ -120,10 +124,10 @@ export default function App() {
   const connected = Boolean(account && /^0x[a-fA-F0-9]{40}$/.test(account));
 
   const signedNav = [
-    { id: "home", label: "Home" },
-    { id: "status", label: "Status" },
-    { id: "verify", label: "Verify" },
-    { id: "help", label: "Help" },
+    { id: "home", label: "Home", icon: Home },
+    { id: "status", label: "Status", icon: FileSearch },
+    { id: "verify", label: "Verify", icon: ShieldCheck },
+    { id: "help", label: "Help", icon: HelpCircle },
   ];
 
   async function loadCredentialFor(address) {
@@ -384,7 +388,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-page text-ink">
-      <header className="sticky top-0 z-40 border-b border-white/40 bg-white/45 shadow-[0_8px_32px_rgba(138,63,252,0.06)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/35">
+      <header
+        className={`sticky top-0 z-40 border-b border-white/40 bg-white/45 shadow-[0_8px_32px_rgba(138,63,252,0.06)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/35 ${
+          connected ? "font-poppins" : ""
+        }`}
+      >
         <div
           className={
             connected
@@ -402,18 +410,23 @@ export default function App() {
           </button>
           {connected ? (
             <nav className="hidden items-center justify-center gap-1 text-sm font-medium md:flex">
-              {signedNav.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setAppView(item.id)}
-                  className={`rounded-full px-3.5 py-1.5 transition ${
-                    appView === item.id ? "bg-brand/10 text-brand" : "text-mute hover:text-ink"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+              {signedNav.map((item) => {
+                const Icon = item.icon;
+                const active = appView === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setAppView(item.id)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition ${
+                      active ? "bg-brand/10 text-brand" : "text-mute hover:text-ink"
+                    }`}
+                  >
+                    <Icon size={14} strokeWidth={2} />
+                    {item.label}
+                  </button>
+                );
+              })}
             </nav>
           ) : null}
           <button type="button" className="btn-primary justify-self-end" onClick={openWalletModal}>
@@ -423,18 +436,23 @@ export default function App() {
         </div>
         {connected ? (
           <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-3 md:hidden">
-            {signedNav.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setAppView(item.id)}
-                className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-                  appView === item.id ? "bg-brand/10 text-brand" : "text-mute"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+            {signedNav.map((item) => {
+              const Icon = item.icon;
+              const active = appView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setAppView(item.id)}
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                    active ? "bg-brand/10 text-brand" : "text-mute"
+                  }`}
+                >
+                  <Icon size={14} strokeWidth={2} />
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
         ) : null}
       </header>
