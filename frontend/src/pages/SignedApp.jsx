@@ -29,7 +29,7 @@ function FieldCard({ label, value }) {
   return (
     <div className="rounded-xl bg-[#faf9fc] px-3 py-3 text-center">
       <p className="text-[11px] text-mute">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-ink">{value || "—"}</p>
+      <p className="mt-1 text-sm font-semibold text-ink">{value || "None"}</p>
     </div>
   );
 }
@@ -111,7 +111,7 @@ export default function SignedApp({
                   </h2>
                   <p className="mt-2 text-sm leading-relaxed text-mute">
                     {valid
-                      ? "Apps and tokens can read this same status. No need to re-verify for every asset."
+                      ? "Apps and tokens can read this same status. No need to verify again for every asset."
                       : "Choose a tier and region, submit once, and your status becomes reusable across BOT Chain apps."}
                   </p>
                 </div>
@@ -138,7 +138,7 @@ export default function SignedApp({
           >
             <PageIntro
               title="Credential status"
-              copy="A simple read of what’s on record for this wallet — no personal data shown."
+              copy="A simple read of what is on record for this wallet. No personal data shown."
             />
 
             <div className="mx-auto mt-8 max-w-lg">
@@ -162,14 +162,14 @@ export default function SignedApp({
                         ? new Date(credential.expiresAt).toLocaleDateString()
                         : null,
                     ],
-                    ["Network", chainLabel || "—"],
+                    ["Network", chainLabel || "None"],
                   ].map(([label, value]) => (
                     <div
                       key={label}
                       className="flex items-center justify-between rounded-xl bg-[#faf9fc] px-3.5 py-3"
                     >
                       <span className="text-mute">{label}</span>
-                      <span className="font-semibold text-ink">{value || "—"}</span>
+                      <span className="font-semibold text-ink">{value || "None"}</span>
                     </div>
                   ))}
                 </div>
@@ -199,7 +199,7 @@ export default function SignedApp({
           >
             <PageIntro
               title="Verify wallet"
-              copy="Pick a tier and region. We’ll post a hash on chain — never your personal details."
+              copy="Pick a tier and region. We will post a hash on chain. Never your personal details."
             />
 
             <div className="mx-auto mt-8 max-w-lg">
@@ -241,12 +241,12 @@ export default function SignedApp({
                   <div className="mt-3 space-y-1.5 text-xs text-mute">
                     <div className="flex justify-between">
                       <span>Request</span>
-                      <span className="text-ink">{verificationId ? shortAddr(verificationId) : "—"}</span>
+                      <span className="text-ink">{verificationId ? shortAddr(verificationId) : "None"}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Transaction</span>
                       <span className="text-ink">
-                        {verification?.txHash ? shortAddr(verification.txHash) : "—"}
+                        {verification?.txHash ? shortAddr(verification.txHash) : "None"}
                       </span>
                     </div>
                   </div>

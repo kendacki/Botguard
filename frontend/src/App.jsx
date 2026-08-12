@@ -39,7 +39,7 @@ const features = [
   {
     id: "credentials",
     title: "Credentials",
-    body: "Store a hash and status on chain — never personal data.",
+    body: "Store a hash and status on chain. Never personal data.",
     image: "/illustrations/private-data.svg",
   },
   {
@@ -487,7 +487,7 @@ export default function App() {
                 variants={heroItem}
                 className="mt-5 max-w-xl text-base leading-relaxed text-mute md:text-lg"
               >
-                Check a wallet once on BOT Chain. Gate every transfer after that —
+                Check a wallet once on BOT Chain. Gate every transfer after that,
                 without putting personal data on chain.
               </motion.p>
 
@@ -575,11 +575,11 @@ export default function App() {
               <div className="mt-5 grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-xl bg-[#faf9fc] px-2 py-3">
                   <p className="text-[11px] text-mute">Tier</p>
-                  <p className="mt-1 text-sm font-semibold text-ink">{credential?.tier || "—"}</p>
+                  <p className="mt-1 text-sm font-semibold text-ink">{credential?.tier || "None"}</p>
                 </div>
                 <div className="rounded-xl bg-[#faf9fc] px-2 py-3">
                   <p className="text-[11px] text-mute">Region</p>
-                  <p className="mt-1 text-sm font-semibold text-ink">{credential?.jurisdiction || "—"}</p>
+                  <p className="mt-1 text-sm font-semibold text-ink">{credential?.jurisdiction || "None"}</p>
                 </div>
                 <div className="rounded-xl bg-[#faf9fc] px-2 py-3">
                   <p className="text-[11px] text-mute">Status</p>
@@ -614,7 +614,7 @@ export default function App() {
                   {
                     role: "Builders",
                     title: "Gate transfers",
-                    body: "Hook ComplianceGate. Check status in-app. Fail closed on chain.",
+                    body: "Hook ComplianceGate. Check status in your app. Fail closed on chain.",
                     steps: ["Integrate", "Precheck", "Enforce"],
                   },
                 ].map((item, i) => (
@@ -677,7 +677,7 @@ export default function App() {
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="section-title">One status everywhere</h2>
               <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-mute md:text-base">
-                Verify a wallet once. Every app and token can trust the same answer — no repeat KYC for each asset.
+                Verify a wallet once. Every app and token can trust the same answer. No repeat KYC for each asset.
               </p>
             </div>
 
@@ -692,7 +692,7 @@ export default function App() {
                   {
                     step: "2",
                     title: "Reuse status",
-                    body: "Apps and APIs read the same valid / invalid result instantly.",
+                    body: "Apps and APIs read the same valid or invalid result instantly.",
                   },
                   {
                     step: "3",
@@ -904,7 +904,7 @@ export default function App() {
             ? "Manage this session. Switching accounts refreshes credential status."
             : hasInjectedWallet
               ? "Connect your browser wallet to open Home, Status, Verify, and Help."
-              : "No browser wallet found. Paste an address for read-only access, or install MetaMask."}
+              : "No browser wallet found. Paste an address for read only access, or install MetaMask."}
         </p>
 
         {connected ? (
