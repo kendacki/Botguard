@@ -387,23 +387,15 @@ export default function App() {
   return (
     <div className="min-h-screen bg-white text-ink">
       <header className="sticky top-0 z-40 border-b border-line bg-white/70 backdrop-blur-glass">
-        <div className="mx-auto grid h-16 w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center px-4 md:px-6">
-          <a href="#top" className="inline-flex items-center gap-2.5 justify-self-start">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6">
+          <a href="#top" className="inline-flex items-center gap-2.5">
             <Logo className="h-8 w-8" />
             <span className="text-sm font-semibold tracking-wide">BOTGUARD</span>
           </a>
-          <nav className="hidden items-center justify-center gap-8 text-sm font-medium text-mute md:flex">
-            <a href="#product" className="transition hover:text-brand">Product</a>
-            <a href="#catalog" className="transition hover:text-brand">Catalog</a>
-            <a href="#flow" className="transition hover:text-brand">Flow</a>
-            <a href="#faq" className="transition hover:text-brand">FAQs</a>
-          </nav>
-          <div className="justify-self-end">
-            <button type="button" className="btn-primary" onClick={openWalletModal}>
-              <Wallet size={16} />
-              {connected ? shortAddr(account) : "Connect"}
-            </button>
-          </div>
+          <button type="button" className="btn-primary" onClick={openWalletModal}>
+            <Wallet size={16} />
+            {connected ? shortAddr(account) : "Connect"}
+          </button>
         </div>
       </header>
 
