@@ -680,7 +680,7 @@ export default function App() {
 
               <motion.p
                 variants={heroItem}
-                className="mt-5 max-w-xl text-base font-bold leading-relaxed text-brand md:text-lg"
+                className="mt-5 max-w-xl text-base font-bold leading-relaxed text-ink md:text-lg"
               >
                 Check a wallet once on BOT Chain. Gate every transfer after that,
                 without putting personal data on chain.
