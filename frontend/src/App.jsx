@@ -375,7 +375,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-page text-ink">
-      <header className="sticky top-0 z-40 border-b border-line/80 bg-[#f7f6f3]/80 backdrop-blur-glass">
+      <header className="sticky top-0 z-40 border-b border-white/40 bg-white/45 shadow-[0_8px_32px_rgba(138,63,252,0.06)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/35">
         <div
           className={
             connected
