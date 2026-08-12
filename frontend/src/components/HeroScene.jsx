@@ -60,24 +60,34 @@ function Signal({ from, to, delay }) {
   const a = map[from];
   const b = map[to];
   return (
-    <motion.circle
-      r="2.1"
-      fill={PURPLE_SOFT}
-      initial={{ cx: a.x, cy: a.y, opacity: 0 }}
-      animate={{
-        cx: [a.x, b.x],
-        cy: [a.y, b.y],
-        opacity: [0, 1, 1, 0],
-      }}
-      transition={{
-        duration: 2.4,
-        repeat: Infinity,
-        delay,
-        ease: "easeInOut",
-        repeatDelay: 0.6,
-      }}
-      style={{ filter: `drop-shadow(0 0 4px ${PURPLE})` }}
-    />
+    <circle r="2.1" fill={PURPLE_SOFT} opacity="0" filter="url(#softGlow)">
+      <animate
+        attributeName="cx"
+        values={`${a.x};${b.x}`}
+        dur="2.4s"
+        begin={`${delay}s`}
+        repeatCount="indefinite"
+        calcMode="spline"
+        keySplines="0.42 0 0.58 1"
+      />
+      <animate
+        attributeName="cy"
+        values={`${a.y};${b.y}`}
+        dur="2.4s"
+        begin={`${delay}s`}
+        repeatCount="indefinite"
+        calcMode="spline"
+        keySplines="0.42 0 0.58 1"
+      />
+      <animate
+        attributeName="opacity"
+        values="0;1;1;0"
+        keyTimes="0;0.15;0.75;1"
+        dur="2.4s"
+        begin={`${delay}s`}
+        repeatCount="indefinite"
+      />
+    </circle>
   );
 }
 
@@ -313,19 +323,22 @@ export default function HeroScene() {
 
             {nodes.map((n, i) => (
               <g key={n.id} filter="url(#softGlow)">
-                <motion.circle
-                  cx={n.x}
-                  cy={n.y}
-                  r="7"
-                  fill="rgba(138,63,252,0.12)"
-                  animate={{ r: [5, 10, 5], opacity: [0.25, 0.75, 0.25] }}
-                  transition={{
-                    duration: 2.6,
-                    repeat: Infinity,
-                    delay: i * 0.12,
-                    ease: "easeInOut",
-                  }}
-                />
+                <circle cx={n.x} cy={n.y} r="7" fill="rgba(138,63,252,0.12)">
+                  <animate
+                    attributeName="r"
+                    values="5;10;5"
+                    dur="2.6s"
+                    begin={`${i * 0.12}s`}
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="0.25;0.75;0.25"
+                    dur="2.6s"
+                    begin={`${i * 0.12}s`}
+                    repeatCount="indefinite"
+                  />
+                </circle>
                 <circle cx={n.x} cy={n.y} r="2.5" fill={PURPLE} />
                 <circle cx={n.x - 0.6} cy={n.y - 0.6} r="0.7" fill="rgba(255,255,255,0.7)" />
               </g>
@@ -335,7 +348,6 @@ export default function HeroScene() {
 
         {/* Specular + rim light */}
         <ellipse cx="-36" cy="-42" rx="30" ry="18" fill="rgba(255,255,255,0.48)" />
-        <ellipse cx="40" cy="48" rx="34" ry="20" fill="rgba(138,63,252,0.08)" />
         <circle cx="0" cy="0" r="98" fill="none" stroke="rgba(138,63,252,0.35)" strokeWidth="1.1" />
 
         {/* Soft horizon fade for half-crop look */}
