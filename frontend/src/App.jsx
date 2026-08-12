@@ -98,7 +98,6 @@ export default function App() {
   const [verificationId, setVerificationId] = useState("");
   const [verification, setVerification] = useState(null);
   const [credential, setCredential] = useState(null);
-  const [issuers, setIssuers] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [walletError, setWalletError] = useState("");
@@ -155,12 +154,6 @@ export default function App() {
       setChainLabel("");
     }
   }
-
-  useEffect(() => {
-    api("/issuers")
-      .then((d) => setIssuers(Array.isArray(d) ? d : d.issuers || []))
-      .catch(() => setIssuers([]));
-  }, []);
 
   useEffect(() => {
     const eth = window.ethereum;
