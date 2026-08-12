@@ -708,7 +708,7 @@ export default function App() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="relative overflow-hidden bg-[#faf9fc] py-12 md:py-16">
+        <section id="faq" className="relative overflow-hidden bg-[#f7f7f7] py-12 md:py-16">
           <div className="relative mx-auto w-full max-w-3xl px-4 md:px-6">
             <div className="text-center">
               <h2 className="section-title">FAQ</h2>
