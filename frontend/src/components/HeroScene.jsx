@@ -53,37 +53,53 @@ const orbitDots = (count, radius, start = 0) =>
   Array.from({ length: count }, (_, i) => {
     const deg = start + (360 / count) * i;
     const rad = (deg * Math.PI) / 180;
-    return { x: Math.cos(rad) * radius, y: Math.sin(rad) * radius, r: i % 3 === 0 ? 2.4 : 1.5 };
+    return {
+      x: Math.cos(rad) * radius,
+      y: Math.sin(rad) * radius,
+      r: i % 3 === 0 ? 2.2 : 1.4,
+    };
   });
+
+function Spin({ children, dur, reverse = false }) {
+  return (
+    <g>
+      {children}
+      <animateTransform
+        attributeName="transform"
+        type="rotate"
+        from={reverse ? "360 0 0" : "0 0 0"}
+        to={reverse ? "0 0 0" : "360 0 0"}
+        dur={dur}
+        repeatCount="indefinite"
+      />
+    </g>
+  );
+}
 
 function Signal({ from, to, delay }) {
   const a = map[from];
   const b = map[to];
   return (
-    <circle r="2.1" fill={PURPLE_SOFT} opacity="0" filter="url(#softGlow)">
+    <circle r="2" fill={PURPLE} opacity="0">
       <animate
         attributeName="cx"
         values={`${a.x};${b.x}`}
-        dur="2.4s"
+        dur="2.2s"
         begin={`${delay}s`}
         repeatCount="indefinite"
-        calcMode="spline"
-        keySplines="0.42 0 0.58 1"
       />
       <animate
         attributeName="cy"
         values={`${a.y};${b.y}`}
-        dur="2.4s"
+        dur="2.2s"
         begin={`${delay}s`}
         repeatCount="indefinite"
-        calcMode="spline"
-        keySplines="0.42 0 0.58 1"
       />
       <animate
         attributeName="opacity"
         values="0;1;1;0"
-        keyTimes="0;0.15;0.75;1"
-        dur="2.4s"
+        keyTimes="0;0.12;0.8;1"
+        dur="2.2s"
         begin={`${delay}s`}
         repeatCount="indefinite"
       />
@@ -93,56 +109,41 @@ function Signal({ from, to, delay }) {
 
 export default function HeroScene() {
   const ringA = orbitDots(8, 118, 12);
-  const ringB = orbitDots(12, 136, 0);
+  const ringB = orbitDots(10, 136, 8);
   const ringC = orbitDots(6, 152, 28);
 
   return (
     <motion.div
       className="relative mx-auto aspect-square w-full"
-      initial={{ opacity: 0, scale: 0.94 }}
+      initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
       aria-hidden="true"
     >
-      {/* Ambient blooms */}
-      <motion.div
-        className="pointer-events-none absolute inset-[8%] rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(138,63,252,0.38) 0%, rgba(138,63,252,0.12) 38%, transparent 68%)",
-          filter: "blur(28px)",
-        }}
-        animate={{ opacity: [0.55, 0.9, 0.55], scale: [0.96, 1.04, 0.96] }}
-        transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <div
-        className="pointer-events-none absolute left-1/2 top-[18%] h-[42%] w-[42%] -translate-x-1/2 rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(255,255,255,0.55), transparent 70%)",
-          filter: "blur(18px)",
-        }}
-      />
-
-      <svg viewBox="-170 -170 340 340" className="relative h-full w-full overflow-visible">
+      <svg viewBox="-170 -170 340 340" className="h-full w-full overflow-visible">
         <defs>
-          <radialGradient id="globeFill" cx="34%" cy="26%" r="70%">
-            <stop offset="0%" stopColor="rgba(167,139,250,0.45)" />
-            <stop offset="35%" stopColor="rgba(138,63,252,0.22)" />
-            <stop offset="72%" stopColor="rgba(138,63,252,0.08)" />
-            <stop offset="100%" stopColor="rgba(247,246,243,0.92)" />
+          <radialGradient id="globeFill" cx="34%" cy="28%" r="68%">
+            <stop offset="0%" stopColor="rgba(167,139,250,0.4)" />
+            <stop offset="40%" stopColor="rgba(138,63,252,0.18)" />
+            <stop offset="78%" stopColor="rgba(138,63,252,0.06)" />
+            <stop offset="100%" stopColor="rgba(247,246,243,0.94)" />
           </radialGradient>
           <linearGradient id="globeRim" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={PURPLE_SOFT} stopOpacity="0.95" />
-            <stop offset="55%" stopColor={PURPLE} stopOpacity="0.55" />
-            <stop offset="100%" stopColor={PURPLE} stopOpacity="0.2" />
+            <stop offset="0%" stopColor={PURPLE_SOFT} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={PURPLE} stopOpacity="0.25" />
           </linearGradient>
           <linearGradient id="arcStroke" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor={PURPLE} stopOpacity="0" />
-            <stop offset="45%" stopColor={PURPLE_SOFT} stopOpacity="0.95" />
+            <stop offset="50%" stopColor={PURPLE_SOFT} stopOpacity="1" />
             <stop offset="100%" stopColor={PURPLE} stopOpacity="0" />
           </linearGradient>
-          <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="2.2" result="blur" />
+          <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(138,63,252,0.28)" />
+            <stop offset="55%" stopColor="rgba(138,63,252,0.08)" />
+            <stop offset="100%" stopColor="rgba(138,63,252,0)" />
+          </radialGradient>
+          <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.8" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
@@ -151,14 +152,16 @@ export default function HeroScene() {
           <clipPath id="globeClip">
             <circle cx="0" cy="0" r="98" />
           </clipPath>
+          <linearGradient id="horizonFade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="50%" stopColor="#F7F6F3" stopOpacity="0" />
+            <stop offset="100%" stopColor="#F7F6F3" stopOpacity="0.65" />
+          </linearGradient>
         </defs>
 
-        {/* Slow outer atmosphere rings */}
-        <motion.g
-          animate={{ rotate: 360 }}
-          transition={{ duration: 58, repeat: Infinity, ease: "linear" }}
-          style={{ transformOrigin: "0px 0px" }}
-        >
+        {/* Soft circular glow — perfect circle, not an oval bloom */}
+        <circle cx="0" cy="0" r="150" fill="url(#coreGlow)" opacity="0.9" />
+
+        <Spin dur="55s" reverse>
           <circle
             cx="0"
             cy="0"
@@ -169,15 +172,11 @@ export default function HeroScene() {
             strokeDasharray="1.5 14"
           />
           {ringC.map((d, i) => (
-            <circle key={`c-${i}`} cx={d.x} cy={d.y} r={d.r} fill={PURPLE} opacity="0.55" />
+            <circle key={`c-${i}`} cx={d.x} cy={d.y} r={d.r} fill={PURPLE} opacity="0.5" />
           ))}
-        </motion.g>
+        </Spin>
 
-        <motion.g
-          animate={{ rotate: -360 }}
-          transition={{ duration: 38, repeat: Infinity, ease: "linear" }}
-          style={{ transformOrigin: "0px 0px" }}
-        >
+        <Spin dur="36s">
           <circle
             cx="0"
             cy="0"
@@ -188,18 +187,11 @@ export default function HeroScene() {
             strokeDasharray="3 9"
           />
           {ringB.map((d, i) => (
-            <g key={`b-${i}`}>
-              <circle cx={d.x} cy={d.y} r={d.r + 2.5} fill="rgba(138,63,252,0.12)" />
-              <circle cx={d.x} cy={d.y} r={d.r} fill={PURPLE} />
-            </g>
+            <circle key={`b-${i}`} cx={d.x} cy={d.y} r={d.r} fill={PURPLE} />
           ))}
-        </motion.g>
+        </Spin>
 
-        <motion.g
-          animate={{ rotate: 360 }}
-          transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
-          style={{ transformOrigin: "0px 0px" }}
-        >
+        <Spin dur="22s" reverse>
           <circle
             cx="0"
             cy="0"
@@ -218,54 +210,41 @@ export default function HeroScene() {
               filter="url(#softGlow)"
             />
           ))}
-        </motion.g>
+        </Spin>
 
-        {/* Sweeping accent arcs */}
-        <motion.g
-          animate={{ rotate: 360 }}
-          transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
-          style={{ transformOrigin: "0px 0px" }}
-        >
-          <motion.circle
+        <Spin dur="13s">
+          <circle
             cx="0"
             cy="0"
             r="124"
             fill="none"
             stroke="url(#arcStroke)"
-            strokeWidth="2.4"
+            strokeWidth="2.2"
             strokeLinecap="round"
-            strokeDasharray="70 710"
+            strokeDasharray="68 720"
             filter="url(#softGlow)"
           />
-        </motion.g>
-        <motion.g
-          animate={{ rotate: -360 }}
-          transition={{ duration: 19, repeat: Infinity, ease: "linear" }}
-          style={{ transformOrigin: "0px 0px" }}
-        >
+        </Spin>
+
+        <Spin dur="18s" reverse>
           <circle
             cx="0"
             cy="0"
             r="108"
             fill="none"
             stroke="url(#arcStroke)"
-            strokeWidth="1.6"
+            strokeWidth="1.5"
             strokeLinecap="round"
-            strokeDasharray="42 640"
+            strokeDasharray="40 640"
             opacity="0.85"
           />
-        </motion.g>
+        </Spin>
 
-        {/* Globe body */}
-        <circle cx="0" cy="0" r="98" fill="url(#globeFill)" stroke="url(#globeRim)" strokeWidth="1.7" />
-        <circle cx="0" cy="0" r="98" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.6" />
+        {/* Perfect sphere shell */}
+        <circle cx="0" cy="0" r="98" fill="url(#globeFill)" stroke="url(#globeRim)" strokeWidth="1.6" />
+        <circle cx="0" cy="0" r="98" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.55" />
 
-        {/* Wireframe + network */}
-        <motion.g
-          animate={{ rotate: 360 }}
-          transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
-          style={{ transformOrigin: "0px 0px" }}
-        >
+        <Spin dur="30s">
           <g clipPath="url(#globeClip)">
             {[-70, -45, -20, 0, 20, 45, 70].map((lat) => {
               const cy = Math.sin((lat * Math.PI) / 180) * 98;
@@ -278,8 +257,8 @@ export default function HeroScene() {
                   rx={Math.max(8, Math.abs(rx))}
                   ry={Math.max(5, Math.abs(rx) * 0.16)}
                   fill="none"
-                  stroke="rgba(138,63,252,0.18)"
-                  strokeWidth="0.7"
+                  stroke="rgba(138,63,252,0.16)"
+                  strokeWidth="0.65"
                 />
               );
             })}
@@ -292,8 +271,8 @@ export default function HeroScene() {
                 rx={10 + Math.abs(Math.cos((lon * Math.PI) / 180)) * 88}
                 ry="98"
                 fill="none"
-                stroke="rgba(138,63,252,0.14)"
-                strokeWidth="0.65"
+                stroke="rgba(138,63,252,0.12)"
+                strokeWidth="0.6"
                 transform={`rotate(${lon})`}
               />
             ))}
@@ -308,8 +287,8 @@ export default function HeroScene() {
                   y1={a.y}
                   x2={b.x}
                   y2={b.y}
-                  stroke="rgba(138,63,252,0.38)"
-                  strokeWidth="0.9"
+                  stroke="rgba(138,63,252,0.36)"
+                  strokeWidth="0.85"
                   strokeLinecap="round"
                 />
               );
@@ -322,42 +301,32 @@ export default function HeroScene() {
             <Signal from="m" to="f" delay={2.5} />
 
             {nodes.map((n, i) => (
-              <g key={n.id} filter="url(#softGlow)">
-                <circle cx={n.x} cy={n.y} r="7" fill="rgba(138,63,252,0.12)">
+              <g key={n.id}>
+                <circle cx={n.x} cy={n.y} r="6" fill="rgba(138,63,252,0.14)">
                   <animate
                     attributeName="r"
-                    values="5;10;5"
-                    dur="2.6s"
-                    begin={`${i * 0.12}s`}
+                    values="4.5;8;4.5"
+                    dur="2.5s"
+                    begin={`${i * 0.1}s`}
                     repeatCount="indefinite"
                   />
                   <animate
                     attributeName="opacity"
-                    values="0.25;0.75;0.25"
-                    dur="2.6s"
-                    begin={`${i * 0.12}s`}
+                    values="0.3;0.8;0.3"
+                    dur="2.5s"
+                    begin={`${i * 0.1}s`}
                     repeatCount="indefinite"
                   />
                 </circle>
-                <circle cx={n.x} cy={n.y} r="2.5" fill={PURPLE} />
-                <circle cx={n.x - 0.6} cy={n.y - 0.6} r="0.7" fill="rgba(255,255,255,0.7)" />
+                <circle cx={n.x} cy={n.y} r="2.3" fill={PURPLE} filter="url(#softGlow)" />
               </g>
             ))}
           </g>
-        </motion.g>
+        </Spin>
 
-        {/* Specular + rim light */}
-        <ellipse cx="-36" cy="-42" rx="30" ry="18" fill="rgba(255,255,255,0.48)" />
-        <circle cx="0" cy="0" r="98" fill="none" stroke="rgba(138,63,252,0.35)" strokeWidth="1.1" />
-
-        {/* Soft horizon fade for half-crop look */}
-        <defs>
-          <linearGradient id="horizonFade" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="55%" stopColor="#F7F6F3" stopOpacity="0" />
-            <stop offset="100%" stopColor="#F7F6F3" stopOpacity="0.55" />
-          </linearGradient>
-        </defs>
-        <rect x="-170" y="20" width="340" height="150" fill="url(#horizonFade)" />
+        <circle cx="-32" cy="-38" r="14" fill="rgba(255,255,255,0.35)" />
+        <circle cx="0" cy="0" r="98" fill="none" stroke="rgba(138,63,252,0.32)" strokeWidth="1" />
+        <rect x="-170" y="24" width="340" height="146" fill="url(#horizonFade)" />
       </svg>
     </motion.div>
   );
