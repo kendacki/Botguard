@@ -1,4 +1,4 @@
-const API = "/api";
+const API = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 export const DEMO_API_KEY = "demo-issuer-key";
 
 export async function api(path, options = {}) {

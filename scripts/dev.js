@@ -18,7 +18,7 @@ const api = spawn("node", ["services/api/server.js"], {
 
 console.log("BOTGUARD API starting in memory mode on :8080");
 console.log("Demo issuer API key: demo-issuer-key");
-console.log("Frontend: cd frontend && npm run dev");
+console.log("Frontend: cd frontend && npm run dev (or npm run frontend)");
 
 function shutdown() {
   api.kill("SIGTERM");

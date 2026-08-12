@@ -24,13 +24,18 @@ const { decideActionFromFlags } = require("../monitor/rules");
 const { useMemory } = require("./db");
 const { issueOnChain } = require("./chain");
 
-const PORT = Number(process.env.API_PORT || 8080);
+const PORT = Number(process.env.PORT || process.env.API_PORT || 8080);
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
 const QUEUE_DEPTH_THRESHOLD = Number(process.env.QUEUE_DEPTH_THRESHOLD || 50);
 const INDEXER_LAG_THRESHOLD = Number(process.env.INDEXER_LAG_THRESHOLD || 30);
 const MONITOR_TOKEN = process.env.MONITOR_TOKEN || "demo-monitor-token";
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: CORS_ORIGIN === "*" ? true : CORS_ORIGIN.split(",").map((s) => s.trim()),
+  })
+);
 app.use(express.json({ limit: "1mb" }));
 app.use(
   rateLimit({

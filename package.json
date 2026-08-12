@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "BOTGUARD — Compliance Credential Registry for the BOT Chain RWA Ecosystem",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",

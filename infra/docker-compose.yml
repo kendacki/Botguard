@@ -19,7 +19,7 @@ services:
   api:
     build:
       context: ..
-      dockerfile: api/Dockerfile
+      dockerfile: services/api/Dockerfile
     environment:
       - DATABASE_URL=postgres://botguard:botguard@postgres:5432/botguard
       - REDIS_URL=redis://redis:6379/0
@@ -43,7 +43,7 @@ services:
   worker:
     build:
       context: ..
-      dockerfile: worker/Dockerfile
+      dockerfile: services/worker/Dockerfile
     environment:
       - DATABASE_URL=postgres://botguard:botguard@postgres:5432/botguard
       - QUEUE_URL=amqp://guest:guest@queue:5672
@@ -62,7 +62,7 @@ services:
   chain-indexer:
     build:
       context: ..
-      dockerfile: indexer/Dockerfile
+      dockerfile: services/indexer/Dockerfile
     environment:
       - DATABASE_URL=postgres://botguard:botguard@postgres:5432/botguard
       - REDIS_URL=redis://redis:6379/0
@@ -79,7 +79,7 @@ services:
   monitoring-agent:
     build:
       context: ..
-      dockerfile: monitoring/Dockerfile
+      dockerfile: services/monitor/Dockerfile
     environment:
       - DATABASE_URL=postgres://botguard:botguard@postgres:5432/botguard
       - CHAIN_RPC_URL=${BOTCHAIN_TESTNET_RPC:-http://host.docker.internal:8545}

@@ -1,5 +1,5 @@
 /**
- * JS port of monitoring/rules.py
+ * JS port of services/monitor/rules.py
  * AUTO_REVOKE requires two independent high-severity (severity >= 4) flags.
  */
 

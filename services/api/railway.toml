@@ -1,0 +1,11 @@
+# Optional per-service Railway config when adding a Railway service
+# with "Root Directory" = services/api and Dockerfile build.
+# Prefer the repo-root railway.toml (build context = monorepo root).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/healthz"
+healthcheckTimeout = 30

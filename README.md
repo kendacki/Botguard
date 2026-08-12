@@ -2,39 +2,35 @@
 
 Compliance credential registry for the BOT Chain RWA ecosystem.
 
-Brand: wine red `#722F37` · white `#FFFFFF`
+Brand purple `#8A3FFC` · page `#F7F6F3`
 
-## Layout (matches reference project)
+## Repository layout
 
 ```
 botguard/
-├── contracts/           # IssuerRegistry, CredentialRegistry, ComplianceGate, ExampleRWAToken
-├── api/                 # openapi.yaml + Docker image
-├── database/            # schema.sql (+ seed.sql)
-├── monitoring/          # rules.py + Docker image
-├── simulation/          # botguard_sim.py + results_*.json
-├── infra/               # docker-compose.yml, nginx, secrets
-├── worker/              # verification worker image
-├── indexer/             # chain-indexer image
-├── services/            # runnable Node API / worker / indexer / monitor
-├── frontend/            # wine-red/white demo site
-└── deployments/         # local contract addresses after deploy
+├── frontend/                 # Vite + React (deploy on Vercel)
+│   ├── vercel.json
+│   └── .env.example          # VITE_API_URL
+├── services/
+│   ├── api/                  # Express API + Dockerfile + OpenAPI (Railway)
+│   ├── worker/               # verification worker + Dockerfile
+│   ├── indexer/              # chain indexer + Dockerfile
+│   └── monitor/              # monitoring agent + rules + Dockerfile
+├── contracts/                # Hardhat Solidity sources
+├── database/                 # Postgres schema + seed
+├── infra/                    # docker-compose, nginx, secrets
+├── simulation/               # Python sims
+├── scripts/                  # deploy helpers + local tooling
+├── deployments/              # contract addresses after deploy
+├── vercel.json               # monorepo fallback for Vercel
+├── railway.toml              # Railway API service (Dockerfile build)
+├── package.json              # root deps + npm scripts
+└── hardhat.config.js
 ```
 
-## Deployed locally (Hardhat)
-
-| Contract | Address |
-|----------|---------|
-| IssuerRegistry | `0x5FbDB2315678afecb367f032d93F642f64180aa3` |
-| CredentialRegistry | `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512` |
-| ExampleRWAToken | `0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9` |
-
-Addresses are also written to `deployments/localhost.json` and `deployments/localhost.env`.
-
-## Quick start
+## Quick start (local)
 
 ```bash
-# install
 npm install
 cd frontend && npm install && cd ..
 
@@ -55,6 +51,63 @@ npm run frontend
 - API: http://localhost:8080  
 - Auth header: `X-BOTGUARD-Api-Key: demo-issuer-key`
 
+## Deploy
+
+### Frontend → Vercel
+
+1. Import this GitHub repo in Vercel.
+2. Set **Root Directory** to `frontend` (recommended).
+3. Framework: Vite (auto-detected via `frontend/vercel.json`).
+4. Environment variable:
+   - `VITE_API_URL` = your Railway API URL (no trailing slash), e.g. `https://botguard-api.up.railway.app`
+5. Deploy.
+
+If Root Directory is left empty, the root `vercel.json` builds `frontend/` for you.
+
+### API → Railway
+
+1. New Railway project → **Deploy from GitHub** (this repo).
+2. Use the root `railway.toml` (Dockerfile: `services/api/Dockerfile`, build context = repo root).
+3. Attach a Postgres plugin (and Redis if not using memory mode).
+4. Set variables (minimum for a demo API):
+
+```bash
+BOTGUARD_MEMORY_MODE=1
+INLINE_WORKER=1
+DEMO_API_KEY=demo-issuer-key
+MONITOR_TOKEN=demo-monitor-token
+CORS_ORIGIN=https://your-app.vercel.app
+PORT=8080
+```
+
+5. For full stack mode (`BOTGUARD_MEMORY_MODE=0`), also set `DATABASE_URL`, `REDIS_URL`, `QUEUE_URL`, and contract/RPC addresses.
+6. Health check: `GET /healthz`
+
+Optional extra Railway services (same repo, different Dockerfiles):
+
+| Service | Dockerfile |
+|---------|------------|
+| worker | `services/worker/Dockerfile` |
+| indexer | `services/indexer/Dockerfile` |
+| monitor | `services/monitor/Dockerfile` |
+
+### Docker (local topology)
+
+```bash
+# after deploy:local, load addresses into the shell, then:
+docker compose -f infra/docker-compose.yml up --build
+```
+
+## API (from `services/api/openapi.yaml`)
+
+- `POST /verifications` — async issuance (`202`, status poll)
+- `GET /verifications/{requestId}`
+- `GET /credentials/{holderAddress}`
+- `POST /credentials/{holderAddress}/renew|revoke`
+- `GET /issuers`
+- `POST /monitor/flags`
+- `GET /healthz`, `GET /readyz`
+
 ### Issue a credential on-chain
 
 ```bash
@@ -68,21 +121,3 @@ npm test
 pip install -r requirements.txt
 npm run sim
 ```
-
-### Docker topology
-
-```bash
-# after deploy:local, load addresses
-Get-Content deployments/localhost.env | ForEach-Object { if ($_ -match '=') { Set-Item env:$($_.Split('=')[0]) $_.Split('=',2)[1] } }
-docker compose -f infra/docker-compose.yml up --build
-```
-
-## API (from `api/openapi.yaml`)
-
-- `POST /verifications` — async issuance (`202`, status poll)
-- `GET /verifications/{requestId}`
-- `GET /credentials/{holderAddress}`
-- `POST /credentials/{holderAddress}/renew|revoke`
-- `GET /issuers`
-- `POST /monitor/flags`
-- `GET /healthz`, `GET /readyz`

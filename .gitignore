@@ -8,6 +8,8 @@ typechain-types/
 .env
 .env.*
 !.env.example
+!frontend/.env.example
+!**/.env.example
 .DS_Store
 deployments/localhost.json
 deployments/localhost.env
