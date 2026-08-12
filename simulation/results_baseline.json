@@ -1,0 +1,22 @@
+{
+  "total_requests_submitted": 7109,
+  "total_completed": 7108,
+  "total_hard_failures": 0,
+  "failure_rate_pct": 0.0,
+  "total_retries_due_to_chain_drop": 221,
+  "issuer_downtime_events": 107,
+  "db_backpressure_events": 0,
+  "chain_tx_drops": 221,
+  "max_verification_queue_depth": 905,
+  "max_db_queue_depth": 0,
+  "revocation_race_window_events_per_day": 243,
+  "latency_seconds": {
+    "min": 2.53,
+    "p50": 27.21,
+    "p90": 3795.83,
+    "p99": 5189.59,
+    "max": 5379.33,
+    "mean": 870.25
+  },
+  "throughput_per_hour_avg": 296.17
+}

@@ -1,0 +1,280 @@
+openapi: 3.0.3
+info:
+  title: BOTGUARD API
+  version: "1.0.0"
+  description: >
+    Off-chain API layer for BOTGUARD, the compliance credential registry for
+    BOT Chain RWA applications. Handles verification submission, credential
+    status queries, issuer management, and monitoring flag ingestion.
+    All state-changing operations here are mirrored on-chain; this API is
+    the ergonomic front door, not a bypass of the contracts.
+
+servers:
+  - url: https://api.botguard.xyz/v1
+    description: Production
+  - url: https://testnet-api.botguard.xyz/v1
+    description: BOT Chain Testnet
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /verifications:
+    post:
+      summary: Submit a new verification request for a holder
+      description: >
+        Called by an approved issuer's backend after they complete their own
+        KYC flow. Body carries only a hash commitment and tier/jurisdiction,
+        never raw identity data.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationSubmission'
+      responses:
+        '202':
+          description: Accepted, queued for on-chain issuance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRequestStatus'
+        '400':
+          description: Malformed submission
+        '401':
+          description: Invalid or missing API key
+        '403':
+          description: Issuer not active on IssuerRegistry
+        '429':
+          description: Rate limit exceeded, see Retry-After header
+
+  /verifications/{requestId}:
+    get:
+      summary: Poll verification request status
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRequestStatus'
+        '404':
+          description: Not found
+
+  /credentials/{holderAddress}:
+    get:
+      summary: Query a holder's current credential status
+      description: >
+        Read-hot-path endpoint, served from credentials_cache with a short
+        Redis TTL. Never blocks on a live chain call.
+      parameters:
+        - name: holderAddress
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credential status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialStatus'
+        '404':
+          description: No credential on record
+
+  /credentials/{holderAddress}/renew:
+    post:
+      summary: Renew an existing credential ahead of expiry
+      parameters:
+        - name: holderAddress
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                additionalSeconds:
+                  type: integer
+      responses:
+        '200':
+          description: Renewal transaction submitted
+        '403':
+          description: Caller is not the original issuer
+
+  /credentials/{holderAddress}/revoke:
+    post:
+      summary: Revoke a holder's credential
+      description: Callable by the issuer, governance, or an authorized monitor relay.
+      parameters:
+        - name: holderAddress
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  description: Short code, e.g. MONITOR_FLAG, USER_REQUEST, ISSUER_ERROR
+      responses:
+        '200':
+          description: Revocation transaction submitted
+        '403':
+          description: Caller not authorized
+
+  /issuers:
+    get:
+      summary: List active issuers
+      responses:
+        '200':
+          description: Issuer list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Issuer'
+
+  /monitor/flags:
+    post:
+      summary: Ingest an anomaly flag from the monitoring agent
+      description: >
+        Internal endpoint, restricted to the monitoring service's own
+        credentials. Not exposed to third-party issuers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonitorFlag'
+      responses:
+        '201':
+          description: Flag recorded, auto-action evaluated
+
+  /healthz:
+    get:
+      summary: Liveness probe
+      security: []
+      responses:
+        '200':
+          description: OK
+
+  /readyz:
+    get:
+      summary: Readiness probe, checks DB and chain-indexer lag
+      security: []
+      responses:
+        '200':
+          description: Ready
+        '503':
+          description: Not ready, e.g. indexer lag exceeds threshold
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-BOTGUARD-Api-Key
+
+  schemas:
+    VerificationSubmission:
+      type: object
+      required: [holderAddress, tier, commitmentHash, validityPeriodSeconds]
+      properties:
+        holderAddress:
+          type: string
+        tier:
+          type: string
+          enum: [RETAIL, ACCREDITED, INSTITUTIONAL]
+        jurisdiction:
+          type: string
+          minLength: 2
+          maxLength: 2
+        commitmentHash:
+          type: string
+          description: keccak256 hash of the off-chain verification record
+        validityPeriodSeconds:
+          type: integer
+
+    VerificationRequestStatus:
+      type: object
+      properties:
+        requestId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, IN_REVIEW, SIGNED, SUBMITTED, CONFIRMED, FAILED]
+        txHash:
+          type: string
+        failureReason:
+          type: string
+
+    CredentialStatus:
+      type: object
+      properties:
+        holderAddress:
+          type: string
+        tier:
+          type: string
+        jurisdiction:
+          type: string
+        issuer:
+          type: string
+        issuedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        revoked:
+          type: boolean
+        valid:
+          type: boolean
+          description: Computed convenience field, false if expired/revoked/issuer inactive
+
+    Issuer:
+      type: object
+      properties:
+        address:
+          type: string
+        name:
+          type: string
+        trustTier:
+          type: integer
+        active:
+          type: boolean
+
+    MonitorFlag:
+      type: object
+      required: [holderAddress, flagType, severity]
+      properties:
+        holderAddress:
+          type: string
+        flagType:
+          type: string
+          enum: [STRUCTURING, RAPID_FRAGMENTATION, TIER_MISMATCH, VELOCITY_ANOMALY]
+        severity:
+          type: integer
+          minimum: 1
+          maximum: 5
+        detail:
+          type: object

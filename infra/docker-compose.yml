@@ -1,0 +1,143 @@
+version: "3.9"
+
+# BOTGUARD testnet topology. Mirrors the production shape at small scale:
+# API gateway in front of a stateless API service (horizontally replicable),
+# a worker pool consuming from a queue, Redis for hot-path credential reads,
+# Postgres as the durable store, and a chain-indexer keeping the read cache
+# in sync with CredentialRegistry / IssuerRegistry events.
+
+services:
+  gateway:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
+    environment:
+      - DATABASE_URL=postgres://botguard:botguard@postgres:5432/botguard
+      - REDIS_URL=redis://redis:6379/0
+      - QUEUE_URL=amqp://guest:guest@queue:5672
+      - CHAIN_RPC_URL=${BOTCHAIN_TESTNET_RPC:-http://host.docker.internal:8545}
+      - CREDENTIAL_REGISTRY_ADDRESS=${CREDENTIAL_REGISTRY_ADDRESS}
+      - ISSUER_REGISTRY_ADDRESS=${ISSUER_REGISTRY_ADDRESS}
+      - API_PORT=8080
+      - INLINE_WORKER=0
+      - BOTGUARD_MEMORY_MODE=0
+      - MONITOR_TOKEN=demo-monitor-token
+      - DEMO_API_KEY=demo-issuer-key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      queue:
+        condition: service_started
+
+  worker:
+    build:
+      context: ..
+      dockerfile: worker/Dockerfile
+    environment:
+      - DATABASE_URL=postgres://botguard:botguard@postgres:5432/botguard
+      - QUEUE_URL=amqp://guest:guest@queue:5672
+      - CHAIN_RPC_URL=${BOTCHAIN_TESTNET_RPC:-http://host.docker.internal:8545}
+      - ISSUER_SIGNING_KEY_PATH=/run/secrets/issuer_key
+      - CREDENTIAL_REGISTRY_ADDRESS=${CREDENTIAL_REGISTRY_ADDRESS}
+      - BOTGUARD_MEMORY_MODE=0
+    secrets:
+      - issuer_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      queue:
+        condition: service_started
+
+  chain-indexer:
+    build:
+      context: ..
+      dockerfile: indexer/Dockerfile
+    environment:
+      - DATABASE_URL=postgres://botguard:botguard@postgres:5432/botguard
+      - REDIS_URL=redis://redis:6379/0
+      - CHAIN_RPC_URL=${BOTCHAIN_TESTNET_RPC:-http://host.docker.internal:8545}
+      - CREDENTIAL_REGISTRY_ADDRESS=${CREDENTIAL_REGISTRY_ADDRESS}
+      - ISSUER_REGISTRY_ADDRESS=${ISSUER_REGISTRY_ADDRESS}
+      - BOTGUARD_MEMORY_MODE=0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  monitoring-agent:
+    build:
+      context: ..
+      dockerfile: monitoring/Dockerfile
+    environment:
+      - DATABASE_URL=postgres://botguard:botguard@postgres:5432/botguard
+      - CHAIN_RPC_URL=${BOTCHAIN_TESTNET_RPC:-http://host.docker.internal:8545}
+      - CREDENTIAL_REGISTRY_ADDRESS=${CREDENTIAL_REGISTRY_ADDRESS}
+      - MONITOR_RELAY_KEY_PATH=/run/secrets/monitor_key
+      - API_URL=http://api:8080
+      - MONITOR_TOKEN=demo-monitor-token
+    secrets:
+      - monitor_key
+    depends_on:
+      - postgres
+      - api
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=botguard
+      - POSTGRES_PASSWORD=botguard
+      - POSTGRES_DB=botguard
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../database/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+      - ../database/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U botguard -d botguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres-replica:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=botguard
+      - POSTGRES_PASSWORD=botguard
+    command: ["postgres", "-c", "hot_standby=on"]
+    depends_on:
+      - postgres
+    profiles: ["full"]
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+
+  queue:
+    image: rabbitmq:3.13-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+volumes:
+  pgdata:
+
+secrets:
+  issuer_key:
+    file: ./secrets/issuer_key.pem
+  monitor_key:
+    file: ./secrets/monitor_key.pem

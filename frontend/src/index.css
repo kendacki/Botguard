@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #0f0f0f;
+  font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-btn px-5 text-sm font-semibold transition;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand text-white hover:bg-brandHover;
+  }
+
+  .btn-ghost {
+    @apply btn border border-line bg-transparent text-white hover:border-soft hover:text-soft;
+  }
+
+  .btn-muted {
+    @apply btn bg-panel text-white hover:bg-line;
+  }
+
+  .field {
+    @apply w-full rounded-btn border border-line bg-ink px-3.5 py-2.5 text-sm text-white outline-none transition placeholder:text-mute focus:border-brand;
+  }
+
+  .panel {
+    @apply rounded-panel border border-line bg-panel;
+  }
+
+  .section-title {
+    @apply text-3xl font-bold tracking-tight text-white md:text-4xl;
+  }
+
+  .section-copy {
+    @apply mt-3 max-w-2xl text-base font-normal leading-relaxed text-mute;
+  }
+}
+
+/* terminal cursor blink */
+@keyframes blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}

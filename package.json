@@ -1,0 +1,37 @@
+{
+  "name": "botguard",
+  "version": "1.0.0",
+  "description": "BOTGUARD — Compliance Credential Registry for the BOT Chain RWA Ecosystem",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:contracts": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost && node scripts/copy-deployment-to-frontend.js",
+    "deploy:hardhat": "hardhat run scripts/deploy.js --network hardhat && node scripts/copy-deployment-to-frontend.js",
+    "node": "hardhat node",
+    "api": "node services/api/server.js",
+    "worker": "node services/worker/worker.js",
+    "indexer": "node services/indexer/indexer.js",
+    "monitor": "node services/monitor/agent.js",
+    "sim": "python simulation/botguard_sim.py",
+    "frontend": "npm --prefix frontend run dev",
+    "dev": "node scripts/dev.js"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.17"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.1.0",
+    "amqplib": "^0.10.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.13.4",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "ioredis": "^5.4.2",
+    "pg": "^8.13.1",
+    "uuid": "^11.0.3"
+  }
+}
