@@ -374,8 +374,8 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-ink">
-      <header className="sticky top-0 z-40 border-b border-line bg-white/70 backdrop-blur-glass">
+    <div className="min-h-screen bg-page text-ink">
+      <header className="sticky top-0 z-40 border-b border-line/80 bg-[#f7f6f3]/80 backdrop-blur-glass">
         <div
           className={
             connected
@@ -385,14 +385,14 @@ export default function App() {
         >
           <a href="#top" className="inline-flex items-center gap-2.5 justify-self-start">
             <Logo className="h-8 w-8" />
-            <span className="text-sm font-semibold tracking-wide">BOTGUARD</span>
+            <span className="text-[15px] font-bold tracking-tight">BOTGUARD</span>
           </a>
           {connected ? (
             <nav className="hidden items-center justify-center gap-8 text-sm font-medium text-mute md:flex">
-              <a href="#product" className="transition hover:text-brand">Product</a>
-              <a href="#catalog" className="transition hover:text-brand">Catalog</a>
-              <a href="#flow" className="transition hover:text-brand">Flow</a>
-              <a href="#faq" className="transition hover:text-brand">FAQs</a>
+              <a href="#product" className="transition hover:text-ink">Product</a>
+              <a href="#catalog" className="transition hover:text-ink">Catalog</a>
+              <a href="#flow" className="transition hover:text-ink">Flow</a>
+              <a href="#faq" className="transition hover:text-ink">FAQs</a>
             </nav>
           ) : null}
           <button type="button" className="btn-primary justify-self-end" onClick={openWalletModal}>
@@ -404,44 +404,41 @@ export default function App() {
 
       <main id="top">
         <section className="relative overflow-hidden">
-          <div
-            className="pointer-events-none absolute inset-0"
-            aria-hidden="true"
-            style={{
-              background:
-                "radial-gradient(ellipse 55% 45% at 0% 0%, rgba(138,63,252,0.06), transparent 60%), radial-gradient(ellipse 40% 35% at 100% 20%, rgba(23,20,31,0.03), transparent 55%)",
-            }}
-          />
-          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pb-12 pt-12 md:grid-cols-2 md:gap-12 md:px-6 md:pb-20 md:pt-16">
+          <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center px-4 pb-10 pt-16 text-center md:px-6 md:pb-14 md:pt-24">
             <motion.div
-              className="max-w-xl"
+              className="flex w-full flex-col items-center"
               variants={heroContainer}
               initial="hidden"
               animate="show"
             >
-              <motion.h1
+              <motion.p
                 variants={heroItem}
-                className="text-4xl font-extrabold leading-[1.05] tracking-tight md:text-5xl lg:text-6xl"
+                className="mb-5 text-sm font-bold tracking-[0.2em] text-ink"
               >
-                <span className="block">Verify. Gate.</span>
-                <motion.span
-                  className="mt-1 block text-brand"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35, duration: 0.55, ease: easeOut }}
-                >
-                  Trust.
-                </motion.span>
-              </motion.h1>
-
-              <motion.p variants={heroItem} className="section-copy">
-                Check a wallet once on BOT Chain. Gate every transfer after that — without putting personal data on chain.
+                BOTGUARD
               </motion.p>
 
-              <motion.div variants={heroItem} className="mt-6">
+              <motion.h1
+                variants={heroItem}
+                className="max-w-3xl text-[2.35rem] font-extrabold leading-[1.12] tracking-tight text-ink sm:text-5xl md:text-[3.5rem] md:leading-[1.08]"
+              >
+                The clean way to{" "}
+                <span className="hero-mark">verify</span>{" "}
+                RWA wallets
+              </motion.h1>
+
+              <motion.p
+                variants={heroItem}
+                className="mt-5 max-w-xl text-base leading-relaxed text-mute md:text-lg"
+              >
+                Check a wallet once on BOT Chain. Gate every transfer after that —
+                without putting personal data on chain.
+              </motion.p>
+
+              <motion.div variants={heroItem} className="mt-8">
                 <motion.button
                   type="button"
-                  className="btn-primary"
+                  className="btn-hero"
                   onClick={() => setDemoOpen(true)}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
@@ -452,7 +449,14 @@ export default function App() {
               </motion.div>
             </motion.div>
 
-            <HeroScene />
+            <motion.div
+              className="mt-12 w-full md:mt-16"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.7, ease: easeOut }}
+            >
+              <HeroScene />
+            </motion.div>
           </div>
         </section>
 

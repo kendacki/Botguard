@@ -9,14 +9,14 @@
 body {
   margin: 0;
   min-height: 100%;
-  background: #ffffff;
-  color: #17141f;
-  font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+  background: #f7f6f3;
+  color: #1a1a1a;
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 #root {
   min-height: 100vh;
-  background: #ffffff;
+  background: #f7f6f3;
 }
 
 @layer components {
@@ -25,27 +25,31 @@ body {
   }
 
   .btn-primary {
-    @apply btn bg-brand text-white hover:bg-brandHover;
+    @apply btn bg-coral text-ink hover:bg-coralHover;
+  }
+
+  .btn-hero {
+    @apply inline-flex h-12 items-center justify-center gap-2 rounded-[14px] bg-coral px-7 text-[15px] font-semibold text-ink transition hover:bg-coralHover;
   }
 
   .btn-ghost {
-    @apply btn border border-line bg-white/50 text-ink backdrop-blur-md hover:border-brand hover:text-brand;
+    @apply btn border border-line bg-white/70 text-ink backdrop-blur-md hover:border-ink/20 hover:text-ink;
   }
 
   .btn-muted {
-    @apply btn border border-line bg-white/40 text-ink backdrop-blur-md hover:bg-white/70;
+    @apply btn border border-line bg-white/50 text-ink backdrop-blur-md hover:bg-white;
   }
 
   .field {
-    @apply w-full rounded-btn border border-line bg-white/60 px-3.5 py-2.5 text-sm text-ink outline-none backdrop-blur-md transition placeholder:text-mute focus:border-brand;
+    @apply w-full rounded-btn border border-line bg-white/80 px-3.5 py-2.5 text-sm text-ink outline-none backdrop-blur-md transition placeholder:text-mute focus:border-ink/25;
   }
 
   .panel {
-    @apply rounded-panel border border-white/70 bg-white/55 shadow-glass backdrop-blur-glass;
+    @apply rounded-panel border border-white/80 bg-white/70 shadow-glass backdrop-blur-glass;
   }
 
   .glass {
-    @apply rounded-panel border border-white/70 bg-white/50 shadow-glass backdrop-blur-glass;
+    @apply rounded-panel border border-white/80 bg-white/60 shadow-glass backdrop-blur-glass;
   }
 
   .section-title {
@@ -54,5 +58,9 @@ body {
 
   .section-copy {
     @apply mt-2 max-w-xl text-sm font-normal leading-relaxed text-mute md:text-base;
+  }
+
+  .hero-mark {
+    @apply mx-1 inline-block rounded-[10px] bg-mark px-2.5 py-0.5;
   }
 }
