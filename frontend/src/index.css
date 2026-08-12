@@ -49,10 +49,10 @@ body {
   }
 
   .section-title {
-    @apply text-3xl font-bold tracking-tight text-ink md:text-4xl;
+    @apply text-2xl font-bold tracking-tight text-ink md:text-3xl;
   }
 
   .section-copy {
-    @apply mt-3 max-w-2xl text-base font-normal leading-relaxed text-mute;
+    @apply mt-2 max-w-xl text-sm font-normal leading-relaxed text-mute md:text-base;
   }
 }

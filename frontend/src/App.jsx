@@ -1,17 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BrowserProvider, keccak256, toUtf8Bytes } from "ethers";
 import {
   ArrowRight,
-  BadgeCheck,
-  Boxes,
-  Check,
   Copy,
-  Lock,
   LogOut,
   Minus,
   Plus,
-  Shield,
   Wallet,
 } from "lucide-react";
 import Logo from "./components/Logo.jsx";
@@ -33,33 +28,29 @@ const heroItem = {
   show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: easeOut } },
 };
 
-const tabs = [
+const features = [
   {
     id: "issuers",
-    label: "Issuers",
     title: "Issuers",
-    body: "Register trusted verifiers with clear trust tiers. Governance stays in control.",
+    body: "Approve trusted verifiers. They decide who gets a credential.",
     image: "/illustrations/authentication.svg",
   },
   {
     id: "credentials",
-    label: "Credentials",
     title: "Credentials",
-    body: "Store hashed commitments only. Tier, region, expiry, and revoke state live on chain.",
+    body: "Store a hash and status on chain — never personal data.",
     image: "/illustrations/private-data.svg",
   },
   {
     id: "gates",
-    label: "Gates",
     title: "Gates",
-    body: "Any RWA token can inherit ComplianceGate and block unsafe transfers before they settle.",
+    body: "Block transfers when a wallet is not verified.",
     image: "/illustrations/firewall.svg",
   },
   {
     id: "monitor",
-    label: "Monitor",
     title: "Monitor",
-    body: "Rule based flags. Auto revoke needs two strong signals. One noisy rule never cuts access alone.",
+    body: "Flag risk early. Revoke only when two strong signals agree.",
     image: "/illustrations/online-security.svg",
   },
 ];
@@ -67,23 +58,23 @@ const tabs = [
 const faqs = [
   {
     q: "What is BOTGUARD?",
-    a: "A shared compliance registry for BOT Chain RWA apps. Verify a wallet once, then reuse that status across gated assets without rebuilding KYC for every token.",
+    a: "A shared check for BOT Chain assets. Verify a wallet once, then use that status across apps.",
   },
   {
-    q: "Does identity go on chain?",
-    a: "No. Only a hash commitment, investor tier, region code, expiry, and revoke state are written. Personal data stays off chain with the issuer.",
+    q: "Is my identity stored on chain?",
+    a: "No. Only a hash, tier, region, expiry, and revoke status go on chain. Personal details stay with the issuer.",
   },
   {
-    q: "Who can revoke a credential?",
-    a: "The issuer, governance, or an authorized monitor relay. The monitor path requires two independent signals before access is cut.",
+    q: "Who can revoke access?",
+    a: "The issuer, governance, or a monitor that needs two matching risk signals.",
   },
   {
-    q: "How do RWA tokens integrate?",
-    a: "Point ComplianceGate at CredentialRegistry and call isValid in transfer hooks. Frontends can precheck status before users submit a transaction.",
+    q: "How do tokens use it?",
+    a: "Tokens call isValid before a transfer. Apps can also check status first in the UI.",
   },
   {
-    q: "What happens when a credential expires?",
-    a: "Gates treat it as invalid until the issuer renews. Apps can surface expiry early so holders re-verify before transfers fail.",
+    q: "What if a credential expires?",
+    a: "Transfers fail until it is renewed. Apps can warn users before that happens.",
   },
 ];
 
@@ -119,10 +110,8 @@ export default function App() {
   const [manualAddress, setManualAddress] = useState("");
   const [chainLabel, setChainLabel] = useState("");
   const [hasInjectedWallet, setHasInjectedWallet] = useState(false);
-  const [activeTab, setActiveTab] = useState("issuers");
   const [openFaq, setOpenFaq] = useState(0);
 
-  const active = useMemo(() => tabs.find((t) => t.id === activeTab) || tabs[0], [activeTab]);
   const valid = Boolean(credential?.valid);
   const connected = Boolean(account && /^0x[a-fA-F0-9]{40}$/.test(account));
 
@@ -423,7 +412,7 @@ export default function App() {
                 "radial-gradient(ellipse 55% 45% at 0% 0%, rgba(138,63,252,0.06), transparent 60%), radial-gradient(ellipse 40% 35% at 100% 20%, rgba(23,20,31,0.03), transparent 55%)",
             }}
           />
-          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pb-16 pt-14 md:grid-cols-2 md:gap-14 md:px-6 md:pb-24 md:pt-20">
+          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pb-12 pt-12 md:grid-cols-2 md:gap-12 md:px-6 md:pb-20 md:pt-16">
             <motion.div
               className="max-w-xl"
               variants={heroContainer}
@@ -432,7 +421,7 @@ export default function App() {
             >
               <motion.h1
                 variants={heroItem}
-                className="text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl"
+                className="text-4xl font-extrabold leading-[1.05] tracking-tight md:text-5xl lg:text-6xl"
               >
                 <span className="block">Verify. Gate.</span>
                 <motion.span
@@ -446,11 +435,10 @@ export default function App() {
               </motion.h1>
 
               <motion.p variants={heroItem} className="section-copy">
-                One registry for RWA wallets on BOT Chain. Issue a credential once. Gate every transfer
-                that follows. No personal data on chain.
+                Check a wallet once on BOT Chain. Gate every transfer after that — without putting personal data on chain.
               </motion.p>
 
-              <motion.div variants={heroItem} className="mt-8 flex flex-wrap gap-3">
+              <motion.div variants={heroItem} className="mt-6">
                 <motion.button
                   type="button"
                   className="btn-primary"
@@ -461,16 +449,6 @@ export default function App() {
                   Launch demo
                   <ArrowRight size={16} />
                 </motion.button>
-                <motion.button
-                  type="button"
-                  className="btn-ghost"
-                  onClick={openWalletModal}
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Wallet size={16} />
-                  {connected ? shortAddr(account) : "Connect wallet"}
-                </motion.button>
               </motion.div>
             </motion.div>
 
@@ -478,123 +456,71 @@ export default function App() {
           </div>
         </section>
 
-        {/* Product tabs */}
-        <section id="product" className="border-y border-line bg-white/40 py-16 md:py-20">
+        {/* Product */}
+        <section id="product" className="border-y border-line bg-white/40 py-12 md:py-16">
           <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
-            <h2 className="section-title">One source for every compliance check.</h2>
+            <h2 className="section-title">How it works</h2>
             <p className="section-copy">
-              Issuers, credentials, gates, and monitor rules live in one place your RWA stack can trust.
+              Four pieces. One shared status your apps can trust.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`h-11 rounded-btn px-4 text-sm font-semibold transition ${
-                    activeTab === tab.id
-                      ? "bg-brand text-white"
-                      : "glass text-mute hover:text-ink"
-                  }`}
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {features.map((item, i) => (
+                <motion.div
+                  key={item.id}
+                  className="panel flex flex-col p-5"
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ delay: i * 0.04 }}
                 >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={active.id}
-                className="panel mt-6 grid gap-6 p-6 md:grid-cols-[1.1fr_0.9fr]"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25 }}
-              >
-                <div>
-                  <h3 className="text-2xl font-bold">{active.title}</h3>
-                  <p className="mt-3 text-mute">{active.body}</p>
-                  <ul className="mt-5 space-y-2 text-sm text-ink/90">
-                    <li className="flex items-center gap-2"><Check size={16} className="text-ok" /> Hashed commitments only</li>
-                    <li className="flex items-center gap-2"><Check size={16} className="text-ok" /> Tier and region aware gates</li>
-                    <li className="flex items-center gap-2"><Check size={16} className="text-ok" /> Fast status reads from cache</li>
-                  </ul>
-                </div>
-                <div className="glass flex flex-col items-center justify-center p-4">
                   <img
-                    src={active.image}
-                    alt={`${active.title} illustration`}
-                    className="mb-4 h-40 w-full max-w-[280px] object-contain"
+                    src={item.image}
+                    alt=""
+                    className="mb-4 h-24 w-full object-contain"
                     loading="lazy"
                   />
-                  <div className="w-full space-y-3 text-sm">
-                    <div className="flex justify-between border-b border-line pb-2">
-                      <span className="text-mute">Active issuers</span>
-                      <span>{issuers.length || 1}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-line pb-2">
-                      <span className="text-mute">Demo status</span>
-                      <span>{valid ? "Valid" : "Idle"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-mute">Surface</span>
-                      <span className="inline-flex items-center gap-1 text-soft">
-                        <Shield size={14} /> Live
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+                  <h3 className="text-base font-semibold">{item.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-mute">{item.body}</p>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* Catalog style */}
-        <section id="catalog" className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 md:py-20">
-          <h2 className="section-title">A catalog teams actually use.</h2>
+        {/* Catalog */}
+        <section id="catalog" className="mx-auto w-full max-w-6xl px-4 py-12 md:px-6 md:py-16">
+          <h2 className="section-title">Try it live</h2>
           <p className="section-copy">
-            Browse issuers, check credential state, and run the verify loop without leaving this page.
+            See issuers and credential status, then run a verification.
           </p>
 
-          <div className="panel mt-8 mb-4 overflow-hidden p-6">
-            <img
-              src="/illustrations/gdpr.svg"
-              alt="Privacy first credentials"
-              className="mx-auto h-48 w-full max-w-xl object-contain"
-              loading="lazy"
-            />
-          </div>
-          <div className="panel overflow-hidden">
-            <div className="flex items-center justify-between border-b border-line px-4 py-3 text-sm">
-              <span className="text-mute">localhost:8080 / catalog</span>
-              <div className="flex gap-2">
-                <span className="rounded-btn bg-brand px-3 py-1 text-xs font-semibold text-white">Catalog</span>
-                <span className="rounded-btn border border-line px-3 py-1 text-xs text-mute">Deployed</span>
-              </div>
-            </div>
+          <div className="panel mt-8 overflow-hidden">
             <div className="grid md:grid-cols-2">
               <div className="border-b border-line p-5 md:border-b-0 md:border-r">
-                <h3 className="mb-3 text-sm font-semibold text-soft">Issuers</h3>
-                <div className="space-y-3">
-                  {(issuers.length ? issuers : [{ name: "BOTGUARD Demo Issuer", address: "0x7099…79C8", trustTier: 1, active: true }]).map((issuer) => (
-                    <div key={issuer.address} className="glass p-3">
+                <h3 className="mb-3 text-sm font-semibold text-ink">Issuers</h3>
+                <div className="space-y-2.5">
+                  {(issuers.length
+                    ? issuers
+                    : [{ name: "BOTGUARD Demo Issuer", address: "0x7099…79C8", trustTier: 1, active: true }]
+                  ).map((issuer) => (
+                    <div key={issuer.address} className="rounded-xl bg-white/70 px-3.5 py-3">
                       <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold">{issuer.name}</p>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold">{issuer.name}</p>
                           <p className="text-xs text-mute">{shortAddr(issuer.address)}</p>
                         </div>
-                        <span className="text-xs text-soft">Tier {issuer.trustTier}</span>
+                        <span className="shrink-0 text-xs text-mute">Tier {issuer.trustTier}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="p-5">
-                <h3 className="mb-3 text-sm font-semibold text-soft">Credential preview</h3>
-                <div className="glass p-4 text-sm">
+                <h3 className="mb-3 text-sm font-semibold text-ink">Credential</h3>
+                <div className="rounded-xl bg-white/70 p-4 text-sm">
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="text-mute">Validity</span>
+                    <span className="text-mute">Status</span>
                     <StatusPill ok={valid} label={valid ? "Valid" : "None"} />
                   </div>
                   <div className="space-y-2 text-mute">
@@ -611,137 +537,90 @@ export default function App() {
           </div>
         </section>
 
-        {/* Split cards */}
-        <section className="border-y border-line bg-white/40 py-16 md:py-20">
-          <div className="mx-auto grid w-full max-w-6xl gap-4 px-4 md:grid-cols-2 md:px-6">
+        {/* Audience */}
+        <section className="border-y border-line bg-white/40 py-12 md:py-16">
+          <div className="mx-auto grid w-full max-w-6xl gap-4 px-4 sm:grid-cols-2 md:px-6">
             <div className="panel p-6">
-              <img
-                src="/illustrations/secure-password.svg"
-                alt="Issuer attestation"
-                className="mb-4 h-36 w-full object-contain"
-                loading="lazy"
-              />
-              <p className="text-xs font-semibold uppercase tracking-wider text-soft">For issuers</p>
-              <h3 className="mt-2 text-2xl font-bold">Curate and attest.</h3>
-              <p className="mt-3 text-sm text-mute">Submit hashed proofs. Renew or revoke when risk changes.</p>
-              <ul className="mt-5 space-y-2 text-sm">
-                <li className="flex gap-2"><BadgeCheck size={16} className="mt-0.5 text-ok" /> API key auth per issuer</li>
-                <li className="flex gap-2"><BadgeCheck size={16} className="mt-0.5 text-ok" /> Async verification with status poll</li>
-                <li className="flex gap-2"><BadgeCheck size={16} className="mt-0.5 text-ok" /> Same truth as the contracts</li>
-              </ul>
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand">Issuers</p>
+              <h3 className="mt-2 text-xl font-bold md:text-2xl">Attest wallets</h3>
+              <p className="mt-2 text-sm leading-relaxed text-mute">
+                Submit a hash, set tier and region, then renew or revoke when risk changes.
+              </p>
             </div>
             <div className="panel p-6">
-              <img
-                src="/illustrations/programming.svg"
-                alt="Builder integration"
-                className="mb-4 h-36 w-full object-contain"
-                loading="lazy"
-              />
-              <p className="text-xs font-semibold uppercase tracking-wider text-soft">For builders</p>
-              <h3 className="mt-2 text-2xl font-bold">Ship the gate.</h3>
-              <p className="mt-3 text-sm text-mute">Inherit ComplianceGate. Precheck in the UI. Fail closed on chain.</p>
-              <ul className="mt-5 space-y-2 text-sm">
-                <li className="flex gap-2"><BadgeCheck size={16} className="mt-0.5 text-ok" /> Drop in ExampleRWAToken pattern</li>
-                <li className="flex gap-2"><BadgeCheck size={16} className="mt-0.5 text-ok" /> Hot path reads from Redis cache</li>
-                <li className="flex gap-2"><BadgeCheck size={16} className="mt-0.5 text-ok" /> Monitor relay for two signal revoke</li>
-              </ul>
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand">Builders</p>
+              <h3 className="mt-2 text-xl font-bold md:text-2xl">Gate transfers</h3>
+              <p className="mt-2 text-sm leading-relaxed text-mute">
+                Plug into ComplianceGate, check status in your app, and fail closed on chain.
+              </p>
             </div>
           </div>
         </section>
 
         {/* Steps */}
-        <section id="flow" className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 md:py-20">
-          <h2 className="section-title">Live in four steps.</h2>
-          <p className="section-copy">From wallet connect to gated transfer without a custom compliance stack.</p>
-          <div className="mt-8 grid gap-4 md:grid-cols-4">
+        <section id="flow" className="mx-auto w-full max-w-6xl px-4 py-12 md:px-6 md:py-16">
+          <h2 className="section-title">Four steps</h2>
+          <p className="section-copy">From connect to gated transfer.</p>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { t: "Connect", d: "Link a wallet or paste an address.", icon: "/illustrations/wallet.svg" },
-              { t: "Verify", d: "Issuer posts a hashed commitment.", icon: "/illustrations/fingerprint.svg" },
-              { t: "Confirm", d: "Credential lands in the registry.", icon: "/illustrations/file-check.svg" },
-              { t: "Gate", d: "RWA transfers check isValid.", icon: "/illustrations/gate.svg" },
+              { t: "Verify", d: "An issuer posts a hashed proof.", icon: "/illustrations/fingerprint.svg" },
+              { t: "Confirm", d: "The credential lands on chain.", icon: "/illustrations/file-check.svg" },
+              { t: "Gate", d: "Transfers check status first.", icon: "/illustrations/gate.svg" },
             ].map((step, i) => (
               <motion.div
                 key={step.t}
-                className="panel p-5"
+                className="panel p-4 sm:p-5"
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.4 }}
-                transition={{ delay: i * 0.05 }}
+                viewport={{ once: true, amount: 0.35 }}
+                transition={{ delay: i * 0.04 }}
               >
-                <img src={step.icon} alt="" className="mb-4 h-10 w-10" loading="lazy" />
+                <img src={step.icon} alt="" className="mb-3 h-9 w-9" loading="lazy" />
                 <h3 className="font-semibold">{step.t}</h3>
-                <p className="mt-1 text-sm text-mute">{step.d}</p>
+                <p className="mt-1 text-sm leading-relaxed text-mute">{step.d}</p>
               </motion.div>
             ))}
           </div>
         </section>
 
-        {/* Architecture strip */}
-        <section className="border-y border-line bg-white/40 py-16">
-          <div className="mx-auto grid w-full max-w-6xl items-center gap-8 px-4 md:grid-cols-2 md:px-6">
+        {/* Architecture */}
+        <section className="border-y border-line bg-white/40 py-12 md:py-16">
+          <div className="mx-auto grid w-full max-w-6xl items-center gap-8 px-4 md:grid-cols-2 md:gap-10 md:px-6">
             <div>
-              <h2 className="section-title">One check for every gated asset.</h2>
+              <h2 className="section-title">One status everywhere</h2>
               <p className="section-copy">
-                Frontends, workers, and tokens all read the same CredentialRegistry. Cache keeps status fast.
-                Chain stays the source of truth.
+                Apps, tokens, and monitors all read the same registry. The chain is the source of truth.
               </p>
-              <div className="mt-6 flex flex-wrap gap-2">
-                {["Wallets", "RWA apps", "Issuers", "Monitor", "Indexers"].map((item) => (
-                  <span key={item} className="glass px-3 py-2 text-xs font-medium text-mute">
-                    {item}
-                  </span>
-                ))}
-              </div>
             </div>
-            <div className="panel p-6">
-              <img
-                src="/illustrations/data-transfer.svg"
-                alt="Secure compliance endpoint"
-                className="mb-5 h-44 w-full object-contain"
-                loading="lazy"
-              />
-              <div className="mb-4 flex items-center gap-2 text-soft">
-                <Lock size={18} />
-                <span className="text-sm font-semibold">Secure compliance endpoint</span>
+            <div className="space-y-2.5">
+              <div className="panel px-4 py-3.5">
+                <p className="text-sm font-semibold">API</p>
+                <p className="text-sm text-mute">Verify, renew, revoke, and check status</p>
               </div>
-              <div className="space-y-3 text-sm">
-                <div className="glass px-3 py-3">
-                  <p className="font-medium">BOTGUARD API</p>
-                  <p className="text-mute">Verify · renew · revoke · status</p>
-                </div>
-                <div className="glass px-3 py-3">
-                  <p className="font-medium">Contracts</p>
-                  <p className="text-mute">IssuerRegistry · CredentialRegistry · ComplianceGate</p>
-                </div>
-                <div className="rounded-btn border border-brand/50 bg-brand/10 px-3 py-3">
-                  <p className="font-medium text-soft">Result</p>
-                  <p className="text-mute">Shared permission layer for BOT Chain RWA</p>
-                </div>
+              <div className="panel px-4 py-3.5">
+                <p className="text-sm font-semibold">Contracts</p>
+                <p className="text-sm text-mute">IssuerRegistry · CredentialRegistry · ComplianceGate</p>
+              </div>
+              <div className="rounded-panel border border-brand/30 bg-brand/5 px-4 py-3.5">
+                <p className="text-sm font-semibold text-brand">Result</p>
+                <p className="text-sm text-mute">Shared permission layer for BOT Chain assets</p>
               </div>
             </div>
           </div>
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="relative overflow-hidden border-t border-line bg-[#faf9fc] py-16 md:py-24">
-          <div
-            className="pointer-events-none absolute inset-0"
-            aria-hidden="true"
-            style={{
-              background:
-                "radial-gradient(ellipse 50% 40% at 50% 0%, rgba(138,63,252,0.07), transparent 70%)",
-            }}
-          />
+        <section id="faq" className="relative overflow-hidden bg-[#faf9fc] py-12 md:py-16">
           <div className="relative mx-auto w-full max-w-3xl px-4 md:px-6">
             <div className="text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">Support</p>
-              <h2 className="section-title mt-3">Questions, answered.</h2>
-              <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-mute">
-                Clear answers on how BOTGUARD verifies wallets, keeps identity off chain, and gates RWA transfers.
+              <h2 className="section-title">FAQ</h2>
+              <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-mute md:text-base">
+                Short answers to common questions.
               </p>
             </div>
 
-            <div className="mt-10 space-y-3">
+            <div className="mt-8 space-y-2.5">
               {faqs.map((item, idx) => {
                 const open = openFaq === idx;
                 return (
@@ -749,28 +628,28 @@ export default function App() {
                     key={item.q}
                     className={`overflow-hidden rounded-2xl border bg-white transition-shadow ${
                       open
-                        ? "border-brand/25 shadow-[0_12px_40px_rgba(138,63,252,0.1)]"
-                        : "border-neutral-200/80 hover:border-neutral-300"
+                        ? "border-brand/25 shadow-[0_10px_32px_rgba(138,63,252,0.08)]"
+                        : "border-neutral-200/80"
                     }`}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.3 }}
-                    transition={{ delay: idx * 0.04 }}
+                    viewport={{ once: true, amount: 0.25 }}
+                    transition={{ delay: idx * 0.03 }}
                   >
                     <button
                       type="button"
-                      className="flex w-full items-center gap-4 px-5 py-5 text-left md:px-6"
+                      className="flex w-full items-center gap-3 px-4 py-4 text-left sm:gap-4 sm:px-5"
                       onClick={() => setOpenFaq(open ? -1 : idx)}
                       aria-expanded={open}
                     >
                       <span
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition ${
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition ${
                           open ? "bg-brand text-white" : "bg-[#f3f0fa] text-brand"
                         }`}
                       >
-                        {open ? <Minus size={16} strokeWidth={2.4} /> : <Plus size={16} strokeWidth={2.4} />}
+                        {open ? <Minus size={15} strokeWidth={2.4} /> : <Plus size={15} strokeWidth={2.4} />}
                       </span>
-                      <span className="flex-1 text-[15px] font-semibold leading-snug text-ink md:text-base">
+                      <span className="flex-1 text-sm font-semibold leading-snug text-ink sm:text-[15px]">
                         {item.q}
                       </span>
                     </button>
@@ -780,10 +659,10 @@ export default function App() {
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                           className="overflow-hidden"
                         >
-                          <p className="border-t border-neutral-100 px-5 pb-5 pt-4 text-sm leading-relaxed text-mute md:px-6 md:pl-[4.25rem]">
+                          <p className="border-t border-neutral-100 px-4 pb-4 pt-3 text-sm leading-relaxed text-mute sm:px-5 sm:pl-[3.75rem]">
                             {item.a}
                           </p>
                         </motion.div>
@@ -797,24 +676,19 @@ export default function App() {
         </section>
 
         {/* CTA */}
-        <section className="border-t border-line py-16 md:py-20">
+        <section className="border-t border-line py-12 md:py-16">
           <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
-            <div className="panel flex flex-col items-start justify-between gap-6 p-8 md:flex-row md:items-center">
+            <div className="panel flex flex-col items-start justify-between gap-5 p-6 sm:p-8 md:flex-row md:items-center">
               <div>
-                <h2 className="text-3xl font-bold tracking-tight">Ship your first gate today.</h2>
-                <p className="mt-2 max-w-xl text-mute">
-                  Open the demo, issue a credential, and watch status flip to valid.
+                <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Ready to try it?</h2>
+                <p className="mt-1.5 max-w-md text-sm text-mute md:text-base">
+                  Open the demo and issue a credential in a few clicks.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-3">
-                <button type="button" className="btn-primary" onClick={() => setDemoOpen(true)}>
-                  Open demo
-                </button>
-                <a className="btn-ghost" href="#product">
-                  <Boxes size={16} />
-                  See product
-                </a>
-              </div>
+              <button type="button" className="btn-primary shrink-0" onClick={() => setDemoOpen(true)}>
+                Open demo
+                <ArrowRight size={16} />
+              </button>
             </div>
           </div>
         </section>
@@ -830,7 +704,7 @@ export default function App() {
                   <span className="text-base font-bold tracking-tight text-ink">BOTGUARD</span>
                 </a>
                 <p className="mt-5 max-w-xs text-sm leading-relaxed text-neutral-500">
-                  Compliance registry for BOT Chain RWA. Verify once, gate transfers, and keep identity off chain.
+                  Verify wallets once. Gate transfers. Keep identity off chain.
                 </p>
               </div>
 
