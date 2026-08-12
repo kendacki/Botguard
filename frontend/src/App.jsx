@@ -622,13 +622,6 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 border-t border-line pt-4 text-xs text-mute">
-                <span className="rounded-full bg-white/80 px-3 py-1.5 font-medium text-ink">Wallets</span>
-                <span className="text-brand">→</span>
-                <span className="rounded-full bg-brand/10 px-3 py-1.5 font-medium text-brand">Shared registry</span>
-                <span className="text-brand">→</span>
-                <span className="rounded-full bg-white/80 px-3 py-1.5 font-medium text-ink">Apps & tokens</span>
-              </div>
             </div>
           </div>
         </section>
