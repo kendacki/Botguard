@@ -411,13 +411,6 @@ export default function App() {
               initial="hidden"
               animate="show"
             >
-              <motion.p
-                variants={heroItem}
-                className="mb-5 text-sm font-bold tracking-[0.2em] text-ink"
-              >
-                BOTGUARD
-              </motion.p>
-
               <motion.h1
                 variants={heroItem}
                 className="max-w-3xl text-[2.35rem] font-extrabold leading-[1.12] tracking-tight text-ink sm:text-5xl md:text-[3.5rem] md:leading-[1.08]"
