@@ -16,11 +16,20 @@ import {
 import Logo from "./components/Logo.jsx";
 import Modal from "./components/Modal.jsx";
 import Alert from "./components/Alert.jsx";
+import HeroScene from "./components/HeroScene.jsx";
 import { api, DEMO_API_KEY, shortAddr } from "./lib/api.js";
 
-const fadeUp = {
+const easeOut = [0.22, 1, 0.36, 1];
+const heroContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.05 },
+  },
+};
+const heroItem = {
   hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.45 } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: easeOut } },
 };
 
 const tabs = [
@@ -241,10 +250,10 @@ export default function App() {
   }
 
   return (
-    <div className="bg-blobs min-h-screen text-ink">
+    <div className="min-h-screen bg-white text-ink">
       <header className="sticky top-0 z-40 border-b border-line bg-white/70 backdrop-blur-glass">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6">
-          <a href="#top" className="flex items-center gap-2.5">
+          <a href="#top" className="inline-flex items-center gap-2.5">
             <Logo className="h-8 w-8" />
             <span className="text-sm font-semibold tracking-wide">BOTGUARD</span>
           </a>
@@ -272,71 +281,74 @@ export default function App() {
       </header>
 
       <main id="top">
-        {/* Hero */}
-        <section className="mx-auto grid w-full max-w-6xl gap-10 px-4 pb-16 pt-14 md:grid-cols-2 md:px-6 md:pb-24 md:pt-20">
-          <motion.div variants={fadeUp} initial="hidden" animate="show">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full glass px-3 py-1 text-xs font-medium text-soft">
+        <section className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pb-16 pt-14 md:grid-cols-2 md:gap-12 md:px-6 md:pb-24 md:pt-20">
+          <motion.div
+            className="max-w-xl"
+            variants={heroContainer}
+            initial="hidden"
+            animate="show"
+          >
+            <motion.div
+              variants={heroItem}
+              className="mb-4 inline-flex items-center gap-2 rounded-full glass px-3 py-1 text-xs font-medium text-soft"
+            >
               <Sparkles size={14} />
               BOT Chain compliance registry
-            </div>
-            <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl">
-              Verify. Gate.
-              <br />
-              Trust.
-            </h1>
-            <p className="section-copy">
+            </motion.div>
+
+            <motion.h1
+              variants={heroItem}
+              className="text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl"
+            >
+              <span className="block">Verify. Gate.</span>
+              <motion.span
+                className="mt-1 block text-brand"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.55, ease: easeOut }}
+              >
+                Trust.
+              </motion.span>
+            </motion.h1>
+
+            <motion.p variants={heroItem} className="section-copy">
               One registry for RWA wallets on BOT Chain. Issue a credential once. Gate every transfer
               that follows. No personal data on chain.
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <button type="button" className="btn-primary" onClick={() => setDemoOpen(true)}>
+            </motion.p>
+
+            <motion.div variants={heroItem} className="mt-7 flex flex-wrap gap-3">
+              <motion.button
+                type="button"
+                className="btn-primary"
+                onClick={() => setDemoOpen(true)}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+              >
                 Launch demo
                 <ArrowRight size={16} />
-              </button>
-              <button type="button" className="btn-ghost" onClick={() => setWalletOpen(true)}>
+              </motion.button>
+              <motion.button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setWalletOpen(true)}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+              >
                 <Wallet size={16} />
                 Connect wallet
-              </button>
-            </div>
-            <div className="mt-6 flex flex-wrap items-center gap-3 text-xs text-mute">
+              </motion.button>
+            </motion.div>
+
+            <motion.div variants={heroItem} className="mt-6 flex flex-wrap items-center gap-3 text-xs text-mute">
               <StatusPill ok={apiOk} label={apiOk ? "API online" : "API offline"} />
               {account ? <StatusPill ok label={shortAddr(account)} /> : null}
               {deployment?.contracts?.CredentialRegistry ? (
                 <StatusPill ok={false} label={`Registry ${shortAddr(deployment.contracts.CredentialRegistry)}`} />
               ) : null}
-            </div>
+            </motion.div>
           </motion.div>
 
-          <motion.div
-            className="panel overflow-hidden shadow-soft"
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-          >
-            <div className="flex items-center justify-between border-b border-line px-4 py-3 text-xs text-mute">
-              <span>~/botguard — registry</span>
-              <span className="text-soft">Open source</span>
-            </div>
-            <div className="space-y-2 px-4 py-5 font-mono text-[13px] leading-6 text-soft">
-              <p>
-                <span className="text-mute">$</span> botguard issue --tier RETAIL --region NG
-              </p>
-              <p className="text-mute">→ hashing commitment</p>
-              <p className="text-mute">→ submitting CredentialRegistry</p>
-              <p className="text-ok">✓ credential confirmed</p>
-              <p>
-                <span className="text-mute">$</span> botguard gate check 0x90F7…b906
-                <span className="cursor-blink">▌</span>
-              </p>
-            </div>
-            <div className="border-t border-line p-4">
-              <img
-                src="/hero-visual.svg"
-                alt="BOTGUARD registry visual"
-                className="h-44 w-full rounded-btn object-cover"
-              />
-            </div>
-          </motion.div>
+          <HeroScene />
         </section>
 
         {/* Product tabs */}

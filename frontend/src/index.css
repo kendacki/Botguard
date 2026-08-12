@@ -19,15 +19,6 @@ body {
   background: #ffffff;
 }
 
-/* Soft brand blobs so glass panels stay readable on white */
-.bg-blobs {
-  background-color: #ffffff;
-  background-image:
-    radial-gradient(circle at 12% 8%, rgba(138, 63, 252, 0.09) 0 180px, transparent 181px),
-    radial-gradient(circle at 88% 12%, rgba(179, 145, 245, 0.11) 0 160px, transparent 161px),
-    radial-gradient(circle at 50% 100%, rgba(138, 63, 252, 0.06) 0 220px, transparent 221px);
-}
-
 @layer components {
   .btn {
     @apply inline-flex h-11 items-center justify-center gap-2 rounded-btn px-5 text-sm font-semibold transition;
@@ -64,18 +55,4 @@ body {
   .section-copy {
     @apply mt-3 max-w-2xl text-base font-normal leading-relaxed text-mute;
   }
-}
-
-@keyframes blink {
-  0%,
-  49% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
-  }
-}
-.cursor-blink {
-  animation: blink 1s step-end infinite;
 }
