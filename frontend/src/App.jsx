@@ -413,59 +413,74 @@ export default function App() {
       </header>
 
       <main id="top">
-        <section className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pb-16 pt-14 md:grid-cols-2 md:gap-12 md:px-6 md:pb-24 md:pt-20">
-          <motion.div
-            className="max-w-xl"
-            variants={heroContainer}
-            initial="hidden"
-            animate="show"
-          >
-            <motion.h1
-              variants={heroItem}
-              className="text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl"
+        <section className="relative overflow-hidden">
+          <div
+            className="pointer-events-none absolute inset-0"
+            aria-hidden="true"
+            style={{
+              background:
+                "radial-gradient(ellipse 55% 45% at 0% 0%, rgba(138,63,252,0.06), transparent 60%), radial-gradient(ellipse 40% 35% at 100% 20%, rgba(23,20,31,0.03), transparent 55%)",
+            }}
+          />
+          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pb-16 pt-14 md:grid-cols-2 md:gap-14 md:px-6 md:pb-24 md:pt-20">
+            <motion.div
+              className="max-w-xl"
+              variants={heroContainer}
+              initial="hidden"
+              animate="show"
             >
-              <span className="block">Verify. Gate.</span>
-              <motion.span
-                className="mt-1 block text-brand"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35, duration: 0.55, ease: easeOut }}
+              <motion.p
+                variants={heroItem}
+                className="mb-4 text-sm font-semibold tracking-[0.18em] text-brand"
               >
-                Trust.
-              </motion.span>
-            </motion.h1>
+                BOTGUARD
+              </motion.p>
+              <motion.h1
+                variants={heroItem}
+                className="text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl"
+              >
+                <span className="block">Verify. Gate.</span>
+                <motion.span
+                  className="mt-1 block text-brand"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35, duration: 0.55, ease: easeOut }}
+                >
+                  Trust.
+                </motion.span>
+              </motion.h1>
 
-            <motion.p variants={heroItem} className="section-copy">
-              One registry for RWA wallets on BOT Chain. Issue a credential once. Gate every transfer
-              that follows. No personal data on chain.
-            </motion.p>
+              <motion.p variants={heroItem} className="section-copy">
+                One registry for RWA wallets on BOT Chain. Issue a credential once. Gate every transfer
+                that follows. No personal data on chain.
+              </motion.p>
 
-            <motion.div variants={heroItem} className="mt-7 flex flex-wrap gap-3">
-              <motion.button
-                type="button"
-                className="btn-primary"
-                onClick={() => setDemoOpen(true)}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Launch demo
-                <ArrowRight size={16} />
-              </motion.button>
-              <motion.button
-                type="button"
-                className="btn-ghost"
-                onClick={openWalletModal}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Wallet size={16} />
-                {connected ? shortAddr(account) : "Connect wallet"}
-              </motion.button>
+              <motion.div variants={heroItem} className="mt-8 flex flex-wrap gap-3">
+                <motion.button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => setDemoOpen(true)}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Launch demo
+                  <ArrowRight size={16} />
+                </motion.button>
+                <motion.button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={openWalletModal}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Wallet size={16} />
+                  {connected ? shortAddr(account) : "Connect wallet"}
+                </motion.button>
+              </motion.div>
             </motion.div>
 
-          </motion.div>
-
-          <HeroScene />
+            <HeroScene />
+          </div>
         </section>
 
         {/* Product tabs */}
