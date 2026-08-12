@@ -1,12 +1,12 @@
-# Railway service: BOTGUARD API
-# In Railway: set Root Directory to repo root, Dockerfile path to services/api/Dockerfile
-# Or use Nixpacks with start command: npm run api
+# Railway — BOTGUARD API service
+# Project root = repo root. Build uses Dockerfile below.
 
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "services/api/Dockerfile"
 
 [deploy]
+startCommand = "node services/api/server.js"
 healthcheckPath = "/healthz"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
