@@ -38,24 +38,28 @@ const tabs = [
     label: "Issuers",
     title: "Issuers",
     body: "Register trusted verifiers with clear trust tiers. Governance stays in control.",
+    image: "/illustrations/authentication.svg",
   },
   {
     id: "credentials",
     label: "Credentials",
     title: "Credentials",
     body: "Store hashed commitments only. Tier, region, expiry, and revoke state live on chain.",
+    image: "/illustrations/private-data.svg",
   },
   {
     id: "gates",
     label: "Gates",
     title: "Gates",
     body: "Any RWA token can inherit ComplianceGate and block unsafe transfers before they settle.",
+    image: "/illustrations/firewall.svg",
   },
   {
     id: "monitor",
     label: "Monitor",
     title: "Monitor",
     body: "Rule based flags. Auto revoke needs two strong signals. One noisy rule never cuts access alone.",
+    image: "/illustrations/online-security.svg",
   },
 ];
 
@@ -394,11 +398,14 @@ export default function App() {
                     <li className="flex items-center gap-2"><Check size={16} className="text-ok" /> Fast status reads from cache</li>
                   </ul>
                 </div>
-                <div className="glass p-4">
-                  <div className="mb-3 flex items-center gap-2 text-sm font-medium text-soft">
-                    <Shield size={16} /> Live surface
-                  </div>
-                  <div className="space-y-3 text-sm">
+                <div className="glass flex flex-col items-center justify-center p-4">
+                  <img
+                    src={active.image}
+                    alt={`${active.title} illustration`}
+                    className="mb-4 h-40 w-full max-w-[280px] object-contain"
+                    loading="lazy"
+                  />
+                  <div className="w-full space-y-3 text-sm">
                     <div className="flex justify-between border-b border-line pb-2">
                       <span className="text-mute">Active issuers</span>
                       <span>{issuers.length || 1}</span>
@@ -408,8 +415,10 @@ export default function App() {
                       <span>{valid ? "Valid" : "Idle"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-mute">Auth header</span>
-                      <span className="text-soft">X BOTGUARD Api Key</span>
+                      <span className="text-mute">Surface</span>
+                      <span className="inline-flex items-center gap-1 text-soft">
+                        <Shield size={14} /> Live
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -425,11 +434,14 @@ export default function App() {
             Browse issuers, check credential state, and run the verify loop without leaving this page.
           </p>
 
-          <img
-            src="/catalog-visual.svg"
-            alt="Catalog preview"
-            className="mt-8 mb-4 w-full rounded-panel border border-line"
-          />
+          <div className="panel mt-8 mb-4 overflow-hidden p-6">
+            <img
+              src="/illustrations/gdpr.svg"
+              alt="Privacy first credentials"
+              className="mx-auto h-48 w-full max-w-xl object-contain"
+              loading="lazy"
+            />
+          </div>
           <div className="panel overflow-hidden">
             <div className="flex items-center justify-between border-b border-line px-4 py-3 text-sm">
               <span className="text-mute">localhost:8080 / catalog</span>
@@ -480,6 +492,12 @@ export default function App() {
         <section className="border-y border-line bg-white/40 py-16 md:py-20">
           <div className="mx-auto grid w-full max-w-6xl gap-4 px-4 md:grid-cols-2 md:px-6">
             <div className="panel p-6">
+              <img
+                src="/illustrations/secure-password.svg"
+                alt="Issuer attestation"
+                className="mb-4 h-36 w-full object-contain"
+                loading="lazy"
+              />
               <p className="text-xs font-semibold uppercase tracking-wider text-soft">For issuers</p>
               <h3 className="mt-2 text-2xl font-bold">Curate and attest.</h3>
               <p className="mt-3 text-sm text-mute">Submit hashed proofs. Renew or revoke when risk changes.</p>
@@ -490,6 +508,12 @@ export default function App() {
               </ul>
             </div>
             <div className="panel p-6">
+              <img
+                src="/illustrations/programming.svg"
+                alt="Builder integration"
+                className="mb-4 h-36 w-full object-contain"
+                loading="lazy"
+              />
               <p className="text-xs font-semibold uppercase tracking-wider text-soft">For builders</p>
               <h3 className="mt-2 text-2xl font-bold">Ship the gate.</h3>
               <p className="mt-3 text-sm text-mute">Inherit ComplianceGate. Precheck in the UI. Fail closed on chain.</p>
@@ -508,10 +532,10 @@ export default function App() {
           <p className="section-copy">From wallet connect to gated transfer without a custom compliance stack.</p>
           <div className="mt-8 grid gap-4 md:grid-cols-4">
             {[
-              { n: "1", t: "Connect", d: "Link a wallet or paste an address." },
-              { n: "2", t: "Verify", d: "Issuer posts a hashed commitment." },
-              { n: "3", t: "Confirm", d: "Credential lands in the registry." },
-              { n: "4", t: "Gate", d: "RWA transfers check isValid." },
+              { n: "1", t: "Connect", d: "Link a wallet or paste an address.", icon: "/illustrations/wallet.svg" },
+              { n: "2", t: "Verify", d: "Issuer posts a hashed commitment.", icon: "/illustrations/fingerprint.svg" },
+              { n: "3", t: "Confirm", d: "Credential lands in the registry.", icon: "/illustrations/file-check.svg" },
+              { n: "4", t: "Gate", d: "RWA transfers check isValid.", icon: "/illustrations/gate.svg" },
             ].map((step, i) => (
               <motion.div
                 key={step.n}
@@ -521,8 +545,11 @@ export default function App() {
                 viewport={{ once: true, amount: 0.4 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-btn bg-brand text-sm font-bold text-white">
-                  {step.n}
+                <div className="mb-4 flex items-center justify-between">
+                  <img src={step.icon} alt="" className="h-10 w-10" loading="lazy" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-btn bg-brand text-sm font-bold text-white">
+                    {step.n}
+                  </div>
                 </div>
                 <h3 className="font-semibold">{step.t}</h3>
                 <p className="mt-1 text-sm text-mute">{step.d}</p>
@@ -533,7 +560,7 @@ export default function App() {
 
         {/* Architecture strip */}
         <section className="border-y border-line bg-white/40 py-16">
-          <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 md:grid-cols-2 md:px-6">
+          <div className="mx-auto grid w-full max-w-6xl items-center gap-8 px-4 md:grid-cols-2 md:px-6">
             <div>
               <h2 className="section-title">One check for every gated asset.</h2>
               <p className="section-copy">
@@ -549,6 +576,12 @@ export default function App() {
               </div>
             </div>
             <div className="panel p-6">
+              <img
+                src="/illustrations/data-transfer.svg"
+                alt="Secure compliance endpoint"
+                className="mb-5 h-44 w-full object-contain"
+                loading="lazy"
+              />
               <div className="mb-4 flex items-center gap-2 text-soft">
                 <Lock size={18} />
                 <span className="text-sm font-semibold">Secure compliance endpoint</span>

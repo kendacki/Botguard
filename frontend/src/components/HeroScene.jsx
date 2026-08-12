@@ -17,6 +17,15 @@ export default function HeroScene() {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.7, ease }}
     >
+      <motion.img
+        src="/illustrations/security-on.svg"
+        alt=""
+        className="pointer-events-none absolute -right-2 top-2 h-20 w-20 opacity-80 sm:h-24 sm:w-24"
+        initial={{ opacity: 0, scale: 0.85 }}
+        animate={{ opacity: 0.85, scale: 1 }}
+        transition={{ delay: 0.25, duration: 0.5, ease }}
+      />
+
       <div className="mb-5 flex items-center justify-between">
         <motion.p
           className="text-xs font-semibold uppercase tracking-[0.14em] text-mute"
