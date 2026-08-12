@@ -723,26 +723,57 @@ export default function App() {
         </section>
 
         {/* Architecture */}
-        <section className="border-y border-line bg-white/40 py-12 md:py-16">
-          <div className="mx-auto grid w-full max-w-6xl items-center gap-8 px-4 md:grid-cols-2 md:gap-10 md:px-6">
-            <div>
+        <section className="border-y border-line bg-white/40 py-10 md:py-14">
+          <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
+            <div className="mx-auto max-w-2xl text-center">
               <h2 className="section-title">One status everywhere</h2>
-              <p className="section-copy">
-                Apps, tokens, and monitors all read the same registry. The chain is the source of truth.
+              <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-mute md:text-base">
+                Verify a wallet once. Every app and token can trust the same answer — no repeat KYC for each asset.
               </p>
             </div>
-            <div className="space-y-2.5">
-              <div className="panel px-4 py-3.5">
-                <p className="text-sm font-semibold">API</p>
-                <p className="text-sm text-mute">Verify, renew, revoke, and check status</p>
+
+            <div className="panel mt-8 overflow-hidden p-4 sm:p-5">
+              <div className="grid gap-3 sm:grid-cols-3 sm:gap-0">
+                {[
+                  {
+                    step: "1",
+                    title: "Check once",
+                    body: "An issuer confirms the wallet and posts a hash on chain.",
+                  },
+                  {
+                    step: "2",
+                    title: "Reuse status",
+                    body: "Apps and APIs read the same valid / invalid result instantly.",
+                  },
+                  {
+                    step: "3",
+                    title: "Gate transfers",
+                    body: "Tokens block unsafe moves before they settle.",
+                  },
+                ].map((item, i) => (
+                  <div
+                    key={item.title}
+                    className={`relative flex gap-3 rounded-2xl bg-[#faf9fc] p-4 sm:rounded-none sm:bg-transparent sm:px-5 sm:py-2 ${
+                      i < 2 ? "sm:border-r sm:border-line" : ""
+                    }`}
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
+                      {item.step}
+                    </span>
+                    <div className="min-w-0 text-left">
+                      <p className="text-sm font-semibold text-ink">{item.title}</p>
+                      <p className="mt-1 text-sm leading-relaxed text-mute">{item.body}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="panel px-4 py-3.5">
-                <p className="text-sm font-semibold">Contracts</p>
-                <p className="text-sm text-mute">IssuerRegistry · CredentialRegistry · ComplianceGate</p>
-              </div>
-              <div className="rounded-panel border border-brand/30 bg-brand/5 px-4 py-3.5">
-                <p className="text-sm font-semibold text-brand">Result</p>
-                <p className="text-sm text-mute">Shared permission layer for BOT Chain assets</p>
+
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 border-t border-line pt-4 text-xs text-mute">
+                <span className="rounded-full bg-white/80 px-3 py-1.5 font-medium text-ink">Wallets</span>
+                <span className="text-brand">→</span>
+                <span className="rounded-full bg-brand/10 px-3 py-1.5 font-medium text-brand">Shared registry</span>
+                <span className="text-brand">→</span>
+                <span className="rounded-full bg-white/80 px-3 py-1.5 font-medium text-ink">Apps & tokens</span>
               </div>
             </div>
           </div>
