@@ -402,8 +402,17 @@ export default function App() {
       let registryAddress = import.meta.env.VITE_CREDENTIAL_REGISTRY_ADDRESS;
       if (!registryAddress) {
         try {
-          const dep = await fetch("/deployments/localhost.json").then((r) => (r.ok ? r.json() : null));
-          registryAddress = dep?.contracts?.CredentialRegistry;
+          const files = [
+            "/deployments/botchainTestnet.json",
+            "/deployments/localhost.json",
+          ];
+          for (const file of files) {
+            const dep = await fetch(file).then((r) => (r.ok ? r.json() : null));
+            if (dep?.contracts?.CredentialRegistry) {
+              registryAddress = dep.contracts.CredentialRegistry;
+              break;
+            }
+          }
         } catch {
           registryAddress = null;
         }
