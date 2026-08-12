@@ -515,59 +515,67 @@ export default function App() {
             </motion.div>
 
             <motion.div
-              className="grid grid-cols-1 items-end gap-3 sm:grid-cols-3 sm:gap-4"
+              className="grid grid-cols-1 items-end gap-2 sm:grid-cols-3 sm:gap-3"
               initial="hidden"
               animate="show"
               variants={heroContainer}
             >
               {/* Left proof */}
-              <motion.div variants={heroItem} className="relative pt-28">
+              <motion.div
+                variants={heroItem}
+                className="relative flex flex-col items-center"
+              >
                 <img
                   src="/illustrations/hero/hero-person-left.png"
                   alt=""
-                  className="pointer-events-none absolute bottom-[calc(100%-3.25rem)] left-1/2 z-10 w-[9.5rem] -translate-x-1/2 select-none drop-shadow-sm sm:w-[10.5rem]"
+                  className="pointer-events-none relative z-10 mb-[-2.75rem] w-[8.75rem] select-none drop-shadow-sm sm:mb-[-3.25rem] sm:w-[9.75rem]"
                   loading="eager"
                 />
-                <div className="relative overflow-hidden rounded-t-[1.35rem] bg-[#E8DEFF] px-5 pb-8 pt-12 text-center">
-                  <p className="text-[2.35rem] font-extrabold leading-none tracking-tight text-[#5B21B6] sm:text-[2.6rem]">
-                    1K+
-                  </p>
-                  <div className="mt-3 flex items-center justify-center gap-1.5">
-                    <img
-                      src="/illustrations/hero/avatar-1.png"
-                      alt=""
-                      className="h-8 w-8 rounded-full border-2 border-white object-cover"
-                    />
-                    <img
-                      src="/illustrations/hero/avatar-2.png"
-                      alt=""
-                      className="h-8 w-8 rounded-full border-2 border-white object-cover"
-                    />
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-white">
-                      <Plus size={14} strokeWidth={2.5} aria-hidden="true" />
-                    </span>
+                <div className="w-full rounded-t-[1.35rem] bg-[#E8DEFF] px-4 pb-7 pt-12 text-center sm:px-5 sm:pt-14">
+                  <div className="flex items-center justify-center gap-2">
+                    <p className="text-[2.2rem] font-extrabold leading-none tracking-tight text-[#5B21B6] sm:text-[2.5rem]">
+                      1K+
+                    </p>
+                    <div className="flex items-center">
+                      <img
+                        src="/illustrations/hero/avatar-1.png"
+                        alt=""
+                        className="h-7 w-7 rounded-full border-2 border-white object-cover"
+                      />
+                      <img
+                        src="/illustrations/hero/avatar-2.png"
+                        alt=""
+                        className="-ml-2 h-7 w-7 rounded-full border-2 border-white object-cover"
+                      />
+                      <span className="-ml-2 flex h-7 w-7 items-center justify-center rounded-full bg-brand text-white">
+                        <Plus size={12} strokeWidth={2.75} aria-hidden="true" />
+                      </span>
+                    </div>
                   </div>
-                  <p className="mx-auto mt-3 max-w-[11.5rem] text-[11px] font-medium leading-snug text-[#5B21B6]/60">
+                  <p className="mx-auto mt-2.5 max-w-[12rem] text-[11px] font-medium leading-snug text-[#5B21B6]/60">
                     Verified wallets and teams shipping gated RWAs.
                   </p>
                 </div>
               </motion.div>
 
               {/* Center CTA */}
-              <motion.div variants={heroItem} className="relative z-[1] pt-32 sm:-mb-1">
+              <motion.div
+                variants={heroItem}
+                className="relative z-[1] flex flex-col items-center"
+              >
                 <img
                   src="/illustrations/hero/hero-person-center.png"
                   alt=""
-                  className="pointer-events-none absolute bottom-[calc(100%-3.5rem)] left-1/2 z-10 w-[11rem] -translate-x-1/2 select-none drop-shadow-md sm:w-[12.5rem]"
+                  className="pointer-events-none relative z-10 mb-[-3rem] w-[10rem] select-none drop-shadow-md sm:mb-[-3.5rem] sm:w-[11.5rem]"
                   loading="eager"
                 />
-                <div className="relative overflow-hidden rounded-t-[1.35rem] bg-brand px-5 pb-10 pt-14 text-center shadow-[0_-8px_40px_rgba(138,63,252,0.25)]">
+                <div className="w-full rounded-t-[1.35rem] bg-brand px-4 pb-9 pt-14 text-center shadow-[0_-8px_40px_rgba(138,63,252,0.25)] sm:px-5 sm:pt-16">
                   <p className="mx-auto max-w-[12rem] text-lg font-bold leading-snug text-white sm:text-xl">
                     Ready to verify your first wallet.
                   </p>
                   <motion.button
                     type="button"
-                    className="btn-hero-pill mx-auto mt-5"
+                    className="btn-hero-pill mx-auto mt-4"
                     onClick={openWalletModal}
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.98 }}
@@ -581,23 +589,26 @@ export default function App() {
               </motion.div>
 
               {/* Right rating */}
-              <motion.div variants={heroItem} className="relative pt-28">
+              <motion.div
+                variants={heroItem}
+                className="relative flex flex-col items-center"
+              >
                 <img
                   src="/illustrations/hero/hero-person-right.png"
                   alt=""
-                  className="pointer-events-none absolute bottom-[calc(100%-3.25rem)] left-1/2 z-10 w-[9.5rem] -translate-x-1/2 select-none drop-shadow-sm sm:w-[10.5rem]"
+                  className="pointer-events-none relative z-10 mb-[-2.75rem] w-[8.75rem] select-none drop-shadow-sm sm:mb-[-3.25rem] sm:w-[9.75rem]"
                   loading="eager"
                 />
-                <div className="relative overflow-hidden rounded-t-[1.35rem] bg-[#E8DEFF] px-5 pb-8 pt-12 text-center">
-                  <p className="flex items-center justify-center gap-1.5 text-[2.35rem] font-extrabold leading-none tracking-tight text-[#5B21B6] sm:text-[2.6rem]">
+                <div className="w-full rounded-t-[1.35rem] bg-[#E8DEFF] px-4 pb-7 pt-12 text-center sm:px-5 sm:pt-14">
+                  <p className="flex items-center justify-center gap-1 text-[2.2rem] font-extrabold leading-none tracking-tight text-[#5B21B6] sm:text-[2.5rem]">
                     4.9
                     <Star
-                      size={28}
-                      className="mb-0.5 fill-brand text-brand"
+                      size={26}
+                      className="fill-brand text-brand"
                       aria-hidden="true"
                     />
                   </p>
-                  <p className="mx-auto mt-4 max-w-[12rem] text-[11px] font-medium leading-snug text-[#5B21B6]/60">
+                  <p className="mx-auto mt-2.5 max-w-[12rem] text-[11px] font-medium leading-snug text-[#5B21B6]/60">
                     Based on builder feedback across BOT Chain pilots.
                   </p>
                 </div>
