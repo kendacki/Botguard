@@ -6,7 +6,7 @@ export default function Modal({ open, onClose, title, children }) {
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -14,30 +14,33 @@ export default function Modal({ open, onClose, title, children }) {
           <button
             type="button"
             aria-label="Close overlay"
-            className="absolute inset-0 bg-[#17141F]/35 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
             onClick={onClose}
           />
           <motion.div
             role="dialog"
             aria-modal="true"
-            className="panel relative z-10 w-full max-w-lg shadow-soft"
-            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            aria-labelledby="modal-title"
+            className="relative z-10 w-full max-w-[400px] overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-[0_16px_48px_rgba(0,0,0,0.14)] outline-none ring-0"
+            initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 320, damping: 28 }}
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 360, damping: 30 }}
           >
-            <div className="flex items-center justify-between border-b border-line px-5 py-4">
-              <h3 className="text-base font-semibold text-ink">{title}</h3>
+            <div className="flex items-center justify-between gap-3 border-b border-neutral-100 px-4 py-3">
+              <h3 id="modal-title" className="text-sm font-semibold tracking-tight text-ink">
+                {title}
+              </h3>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-btn p-2 text-mute hover:bg-white/70 hover:text-ink"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-mute transition hover:bg-neutral-100 hover:text-ink"
                 aria-label="Close"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
-            <div className="px-5 py-5">{children}</div>
+            <div className="px-4 py-3.5">{children}</div>
           </motion.div>
         </motion.div>
       ) : null}

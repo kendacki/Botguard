@@ -974,83 +974,106 @@ export default function App() {
         }}
         title={connected ? "Wallet" : "Connect"}
       >
-        <p className="text-sm text-mute">
-          {connected
-            ? "Manage this session. Switching accounts refreshes credential status."
-            : hasInjectedWallet
-              ? "Connect your browser wallet to open Home, Status, Verify, and Help."
-              : "No browser wallet found. Paste an address for read only access, or install MetaMask."}
-        </p>
+        <div className="space-y-3">
+          <p className="text-xs leading-relaxed text-mute">
+            {connected
+              ? "Manage this session. Switching accounts refreshes credential status."
+              : hasInjectedWallet
+                ? "Connect your browser wallet to open Home, Status, Verify, and Help."
+                : "No browser wallet found. Paste an address for read-only access, or install MetaMask."}
+          </p>
 
-        {connected ? (
-          <div className="mt-4 space-y-3">
-            <div className="rounded-2xl bg-[#faf9fc] p-4 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs text-mute">Connected</p>
-                  <p className="mt-1 break-all font-medium text-ink">{account}</p>
+          {connected ? (
+            <>
+              <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-mute">
+                      Connected
+                    </p>
+                    <p className="mt-1 break-all font-mono text-xs font-medium leading-snug text-ink">
+                      {account}
+                    </p>
+                  </div>
+                  <StatusPill ok label={chainLabel || "Ready"} />
                 </div>
-                <StatusPill ok label={chainLabel || "Ready"} />
               </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" className="btn-ghost" onClick={copyAddress}>
-                <Copy size={16} />
-                Copy
-              </button>
-              {hasInjectedWallet ? (
-                <button type="button" className="btn-ghost" onClick={connectWallet} disabled={connecting}>
-                  <Wallet size={16} />
-                  {connecting ? "Switching…" : "Switch account"}
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" className="btn-ghost h-9 px-3 text-xs" onClick={copyAddress}>
+                  <Copy size={14} />
+                  Copy
                 </button>
-              ) : null}
-              <button type="button" className="btn-ghost" onClick={disconnectWallet}>
-                <LogOut size={16} />
-                Disconnect
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-5 space-y-4">
-            <button
-              type="button"
-              className="btn-primary w-full justify-center"
-              onClick={connectWallet}
-              disabled={connecting || !hasInjectedWallet}
-            >
-              <Wallet size={16} />
-              {connecting ? "Connecting…" : hasInjectedWallet ? "Connect wallet" : "Wallet not available"}
-            </button>
-            {!hasInjectedWallet ? (
-              <a
-                className="btn-ghost w-full justify-center"
-                href="https://metamask.io/download/"
-                target="_blank"
-                rel="noreferrer"
+                {hasInjectedWallet ? (
+                  <button
+                    type="button"
+                    className="btn-ghost h-9 px-3 text-xs"
+                    onClick={connectWallet}
+                    disabled={connecting}
+                  >
+                    <Wallet size={14} />
+                    {connecting ? "Switching…" : "Switch"}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className={`btn-ghost h-9 px-3 text-xs ${hasInjectedWallet ? "col-span-2" : ""}`}
+                  onClick={disconnectWallet}
+                >
+                  <LogOut size={14} />
+                  Disconnect
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="btn-primary h-10 w-full justify-center text-sm"
+                onClick={connectWallet}
+                disabled={connecting || !hasInjectedWallet}
               >
-                Install MetaMask
-              </a>
-            ) : null}
-            <div>
-              <label className="block text-xs font-medium text-mute">
-                Or paste address
-                <input
-                  className="field mt-1.5"
-                  value={manualAddress}
-                  onChange={(e) => setManualAddress(e.target.value)}
-                  placeholder="0x…"
-                  spellCheck={false}
-                />
-              </label>
-              <button type="button" className="btn-ghost mt-3" onClick={useManualAddress}>
-                Use address
+                <Wallet size={15} />
+                {connecting
+                  ? "Connecting…"
+                  : hasInjectedWallet
+                    ? "Connect wallet"
+                    : "Wallet not available"}
               </button>
-            </div>
-          </div>
-        )}
+              {!hasInjectedWallet ? (
+                <a
+                  className="btn-ghost h-9 w-full justify-center text-xs"
+                  href="https://metamask.io/download/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Install MetaMask
+                </a>
+              ) : null}
+              <div className="rounded-xl border border-neutral-100 bg-neutral-50/80 p-2.5">
+                <label className="block text-[10px] font-medium uppercase tracking-wide text-mute">
+                  Or paste address
+                  <input
+                    className="field mt-1.5 h-9 rounded-lg px-3 py-1.5 text-xs"
+                    value={manualAddress}
+                    onChange={(e) => setManualAddress(e.target.value)}
+                    placeholder="0x…"
+                    spellCheck={false}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="btn-ghost mt-2 h-9 w-full justify-center text-xs"
+                  onClick={useManualAddress}
+                >
+                  Use address
+                </button>
+              </div>
+            </>
+          )}
 
-        <Alert type="error">{walletError}</Alert>
-        <Alert type="success">{walletSuccess}</Alert>
+          <Alert type="error">{walletError}</Alert>
+          <Alert type="success">{walletSuccess}</Alert>
+        </div>
       </Modal>
     </div>
   );
