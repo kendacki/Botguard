@@ -972,7 +972,7 @@ export default function App() {
           setWalletError("");
           setWalletSuccess("");
         }}
-        title={connected ? "Wallet" : "Connect"}
+        title={connected ? "Wallet" : undefined}
       >
         <div className="space-y-3">
           <p className="text-xs leading-relaxed text-mute">
