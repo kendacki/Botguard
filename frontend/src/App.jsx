@@ -7,7 +7,7 @@ import {
   Boxes,
   Check,
   ChevronDown,
-  Github,
+  GitBranch,
   Lock,
   Shield,
   Sparkles,
@@ -73,7 +73,7 @@ function StatusPill({ ok, label }) {
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
-        ok ? "border-ok/40 bg-ok/10 text-ok" : "border-line bg-ink text-mute"
+        ok ? "border-ok/40 bg-ok/10 text-ok" : "border-line bg-white/60 text-mute backdrop-blur-md"
       }`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-ok" : "bg-mute"}`} />
@@ -241,27 +241,27 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-ink text-white">
-      <header className="sticky top-0 z-40 border-b border-line bg-ink/95 backdrop-blur">
+    <div className="bg-blobs min-h-screen text-ink">
+      <header className="sticky top-0 z-40 border-b border-line bg-white/70 backdrop-blur-glass">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6">
           <a href="#top" className="flex items-center gap-2.5">
             <Logo className="h-8 w-8" />
             <span className="text-sm font-semibold tracking-wide">BOTGUARD</span>
           </a>
           <nav className="hidden items-center gap-6 text-sm text-mute md:flex">
-            <a href="#product" className="hover:text-white">Product</a>
-            <a href="#catalog" className="hover:text-white">Catalog</a>
-            <a href="#flow" className="hover:text-white">Flow</a>
-            <a href="#faq" className="hover:text-white">FAQs</a>
+            <a href="#product" className="hover:text-brand">Product</a>
+            <a href="#catalog" className="hover:text-brand">Catalog</a>
+            <a href="#flow" className="hover:text-brand">Flow</a>
+            <a href="#faq" className="hover:text-brand">FAQs</a>
           </nav>
           <div className="flex items-center gap-2">
             <a
               className="btn-ghost hidden sm:inline-flex"
-              href="https://github.com"
+              href="https://github.com/kendacki/Botguard"
               target="_blank"
               rel="noreferrer"
             >
-              <Github size={16} />
+              <GitBranch size={16} />
               GitHub
             </a>
             <button type="button" className="btn-primary" onClick={() => setDemoOpen(true)}>
@@ -275,7 +275,7 @@ export default function App() {
         {/* Hero */}
         <section className="mx-auto grid w-full max-w-6xl gap-10 px-4 pb-16 pt-14 md:grid-cols-2 md:px-6 md:pb-24 md:pt-20">
           <motion.div variants={fadeUp} initial="hidden" animate="show">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-line bg-panel px-3 py-1 text-xs font-medium text-soft">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full glass px-3 py-1 text-xs font-medium text-soft">
               <Sparkles size={14} />
               BOT Chain compliance registry
             </div>
@@ -331,16 +331,16 @@ export default function App() {
             </div>
             <div className="border-t border-line p-4">
               <img
-                src="https://images.unsplash.com/photo-1639763482123-ff4626c1d4d2?auto=format&fit=crop&w=1200&q=80"
-                alt="Abstract ledger visual"
-                className="h-40 w-full rounded-btn object-cover opacity-90"
+                src="/hero-visual.svg"
+                alt="BOTGUARD registry visual"
+                className="h-44 w-full rounded-btn object-cover"
               />
             </div>
           </motion.div>
         </section>
 
         {/* Product tabs */}
-        <section id="product" className="border-y border-line bg-panel/40 py-16 md:py-20">
+        <section id="product" className="border-y border-line bg-white/40 py-16 md:py-20">
           <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
             <h2 className="section-title">One source for every compliance check.</h2>
             <p className="section-copy">
@@ -356,7 +356,7 @@ export default function App() {
                   className={`h-11 rounded-btn px-4 text-sm font-semibold transition ${
                     activeTab === tab.id
                       ? "bg-brand text-white"
-                      : "border border-line bg-ink text-mute hover:text-white"
+                      : "glass text-mute hover:text-ink"
                   }`}
                 >
                   {tab.label}
@@ -376,13 +376,13 @@ export default function App() {
                 <div>
                   <h3 className="text-2xl font-bold">{active.title}</h3>
                   <p className="mt-3 text-mute">{active.body}</p>
-                  <ul className="mt-5 space-y-2 text-sm text-white/90">
+                  <ul className="mt-5 space-y-2 text-sm text-ink/90">
                     <li className="flex items-center gap-2"><Check size={16} className="text-ok" /> Hashed commitments only</li>
                     <li className="flex items-center gap-2"><Check size={16} className="text-ok" /> Tier and region aware gates</li>
                     <li className="flex items-center gap-2"><Check size={16} className="text-ok" /> Fast status reads from cache</li>
                   </ul>
                 </div>
-                <div className="rounded-btn border border-line bg-ink p-4">
+                <div className="glass p-4">
                   <div className="mb-3 flex items-center gap-2 text-sm font-medium text-soft">
                     <Shield size={16} /> Live surface
                   </div>
@@ -413,11 +413,16 @@ export default function App() {
             Browse issuers, check credential state, and run the verify loop without leaving this page.
           </p>
 
-          <div className="panel mt-8 overflow-hidden">
+          <img
+            src="/catalog-visual.svg"
+            alt="Catalog preview"
+            className="mt-8 mb-4 w-full rounded-panel border border-line"
+          />
+          <div className="panel overflow-hidden">
             <div className="flex items-center justify-between border-b border-line px-4 py-3 text-sm">
               <span className="text-mute">localhost:8080 / catalog</span>
               <div className="flex gap-2">
-                <span className="rounded-btn bg-brand px-3 py-1 text-xs font-semibold">Catalog</span>
+                <span className="rounded-btn bg-brand px-3 py-1 text-xs font-semibold text-white">Catalog</span>
                 <span className="rounded-btn border border-line px-3 py-1 text-xs text-mute">Deployed</span>
               </div>
             </div>
@@ -426,7 +431,7 @@ export default function App() {
                 <h3 className="mb-3 text-sm font-semibold text-soft">Issuers</h3>
                 <div className="space-y-3">
                   {(issuers.length ? issuers : [{ name: "BOTGUARD Demo Issuer", address: "0x7099…79C8", trustTier: 1, active: true }]).map((issuer) => (
-                    <div key={issuer.address} className="rounded-btn border border-line bg-ink p-3">
+                    <div key={issuer.address} className="glass p-3">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold">{issuer.name}</p>
@@ -440,15 +445,15 @@ export default function App() {
               </div>
               <div className="p-5">
                 <h3 className="mb-3 text-sm font-semibold text-soft">Credential preview</h3>
-                <div className="rounded-btn border border-line bg-ink p-4 text-sm">
+                <div className="glass p-4 text-sm">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-mute">Validity</span>
                     <StatusPill ok={valid} label={valid ? "Valid" : "None"} />
                   </div>
                   <div className="space-y-2 text-mute">
-                    <div className="flex justify-between"><span>Tier</span><span className="text-white">{credential?.tier || "—"}</span></div>
-                    <div className="flex justify-between"><span>Region</span><span className="text-white">{credential?.jurisdiction || "—"}</span></div>
-                    <div className="flex justify-between"><span>Request</span><span className="text-white">{verification?.status || "—"}</span></div>
+                    <div className="flex justify-between"><span>Tier</span><span className="text-ink">{credential?.tier || "—"}</span></div>
+                    <div className="flex justify-between"><span>Region</span><span className="text-ink">{credential?.jurisdiction || "—"}</span></div>
+                    <div className="flex justify-between"><span>Request</span><span className="text-ink">{verification?.status || "—"}</span></div>
                   </div>
                   <button type="button" className="btn-primary mt-4 w-full" onClick={() => setDemoOpen(true)}>
                     Run verification
@@ -460,7 +465,7 @@ export default function App() {
         </section>
 
         {/* Split cards */}
-        <section className="border-y border-line bg-panel/40 py-16 md:py-20">
+        <section className="border-y border-line bg-white/40 py-16 md:py-20">
           <div className="mx-auto grid w-full max-w-6xl gap-4 px-4 md:grid-cols-2 md:px-6">
             <div className="panel p-6">
               <p className="text-xs font-semibold uppercase tracking-wider text-soft">For issuers</p>
@@ -504,7 +509,7 @@ export default function App() {
                 viewport={{ once: true, amount: 0.4 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-btn bg-brand text-sm font-bold">
+                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-btn bg-brand text-sm font-bold text-white">
                   {step.n}
                 </div>
                 <h3 className="font-semibold">{step.t}</h3>
@@ -515,7 +520,7 @@ export default function App() {
         </section>
 
         {/* Architecture strip */}
-        <section className="border-y border-line bg-panel/40 py-16">
+        <section className="border-y border-line bg-white/40 py-16">
           <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 md:grid-cols-2 md:px-6">
             <div>
               <h2 className="section-title">One check for every gated asset.</h2>
@@ -525,7 +530,7 @@ export default function App() {
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 {["Wallets", "RWA apps", "Issuers", "Monitor", "Indexers"].map((item) => (
-                  <span key={item} className="rounded-btn border border-line bg-ink px-3 py-2 text-xs font-medium text-mute">
+                  <span key={item} className="glass px-3 py-2 text-xs font-medium text-mute">
                     {item}
                   </span>
                 ))}
@@ -537,11 +542,11 @@ export default function App() {
                 <span className="text-sm font-semibold">Secure compliance endpoint</span>
               </div>
               <div className="space-y-3 text-sm">
-                <div className="rounded-btn border border-line bg-ink px-3 py-3">
+                <div className="glass px-3 py-3">
                   <p className="font-medium">BOTGUARD API</p>
                   <p className="text-mute">Verify · renew · revoke · status</p>
                 </div>
-                <div className="rounded-btn border border-line bg-ink px-3 py-3">
+                <div className="glass px-3 py-3">
                   <p className="font-medium">Contracts</p>
                   <p className="text-mute">IssuerRegistry · CredentialRegistry · ComplianceGate</p>
                 </div>
@@ -557,7 +562,7 @@ export default function App() {
         {/* FAQ */}
         <section id="faq" className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 md:py-20">
           <h2 className="section-title">FAQs</h2>
-          <div className="mt-8 divide-y divide-line rounded-panel border border-line bg-panel">
+          <div className="panel mt-8 divide-y divide-line overflow-hidden">
             {faqs.map((item, idx) => {
               const open = openFaq === idx;
               return (
@@ -622,10 +627,10 @@ export default function App() {
             </div>
           </div>
           <div className="flex flex-wrap gap-4 text-sm text-mute">
-            <a href="#product" className="hover:text-white">Product</a>
-            <a href="#catalog" className="hover:text-white">Catalog</a>
-            <a href="#faq" className="hover:text-white">FAQs</a>
-            <a href="#flow" className="hover:text-white">Flow</a>
+            <a href="#product" className="hover:text-brand">Product</a>
+            <a href="#catalog" className="hover:text-brand">Catalog</a>
+            <a href="#faq" className="hover:text-brand">FAQs</a>
+            <a href="#flow" className="hover:text-brand">Flow</a>
           </div>
         </div>
       </footer>
@@ -678,15 +683,15 @@ export default function App() {
             </label>
           </div>
 
-          <div className="rounded-btn border border-line bg-ink p-3 text-sm">
+          <div className="glass p-3 text-sm">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-mute">Status</span>
               <StatusPill ok={valid} label={valid ? "Valid" : verification?.status || "Idle"} />
             </div>
             <div className="space-y-1 text-xs text-mute">
-              <div className="flex justify-between"><span>Request</span><span className="text-white">{verificationId ? shortAddr(verificationId) : "—"}</span></div>
-              <div className="flex justify-between"><span>Tx</span><span className="text-white">{verification?.txHash ? shortAddr(verification.txHash) : "—"}</span></div>
-              <div className="flex justify-between"><span>Tier</span><span className="text-white">{credential?.tier || "—"}</span></div>
+              <div className="flex justify-between"><span>Request</span><span className="text-ink">{verificationId ? shortAddr(verificationId) : "—"}</span></div>
+              <div className="flex justify-between"><span>Tx</span><span className="text-ink">{verification?.txHash ? shortAddr(verification.txHash) : "—"}</span></div>
+              <div className="flex justify-between"><span>Tier</span><span className="text-ink">{credential?.tier || "—"}</span></div>
             </div>
           </div>
 

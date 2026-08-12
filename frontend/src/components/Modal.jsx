@@ -14,7 +14,7 @@ export default function Modal({ open, onClose, title, children }) {
           <button
             type="button"
             aria-label="Close overlay"
-            className="absolute inset-0 bg-black/70"
+            className="absolute inset-0 bg-[#17141F]/35 backdrop-blur-sm"
             onClick={onClose}
           />
           <motion.div
@@ -27,11 +27,11 @@ export default function Modal({ open, onClose, title, children }) {
             transition={{ type: "spring", stiffness: 320, damping: 28 }}
           >
             <div className="flex items-center justify-between border-b border-line px-5 py-4">
-              <h3 className="text-base font-semibold text-white">{title}</h3>
+              <h3 className="text-base font-semibold text-ink">{title}</h3>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-btn p-2 text-mute hover:bg-ink hover:text-white"
+                className="rounded-btn p-2 text-mute hover:bg-white/70 hover:text-ink"
                 aria-label="Close"
               >
                 <X size={18} />

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" fill="none" role="img" aria-label="BOTGUARD registry visual">
+  <rect width="720" height="320" rx="20" fill="#F4F0FF"/>
+  <rect x="40" y="36" width="280" height="248" rx="18" fill="#FFFFFF" fill-opacity="0.72" stroke="#D9D0F5"/>
+  <rect x="68" y="68" width="140" height="14" rx="7" fill="#8A3FFC" fill-opacity="0.85"/>
+  <rect x="68" y="100" width="220" height="10" rx="5" fill="#C9C2E0"/>
+  <rect x="68" y="122" width="180" height="10" rx="5" fill="#DCD6F0"/>
+  <rect x="68" y="160" width="224" height="52" rx="12" fill="#8A3FFC" fill-opacity="0.12" stroke="#8A3FFC"/>
+  <rect x="68" y="230" width="96" height="28" rx="10" fill="#8A3FFC"/>
+  <rect x="176" y="230" width="96" height="28" rx="10" fill="#FFFFFF" stroke="#D9D0F5"/>
+
+  <rect x="360" y="36" width="320" height="248" rx="18" fill="#FFFFFF" fill-opacity="0.72" stroke="#D9D0F5"/>
+  <circle cx="520" cy="150" r="70" fill="#8A3FFC" fill-opacity="0.12"/>
+  <path d="M520 96c-24 0-44 15-44 34v36c0 28 20 47 44 52 24-5 44-24 44-52v-36c0-19-20-34-44-34z" fill="#8A3FFC"/>
+  <path d="M502 128h18c8 0 13 4 13 10s-4 9-10 10c8 2 13 6 13 13 0 8-6 13-15 13h-19v-46zm9 18h8c4 0 6-2 6-5s-2-5-6-5h-8v10zm0 20h9c4 0 7-2 7-6s-3-5-7-5h-9v11z" fill="#FFFFFF"/>
+  <rect x="404" y="236" width="232" height="12" rx="6" fill="#DCD6F0"/>
+  <rect x="444" y="258" width="152" height="10" rx="5" fill="#E8E3F7"/>
+</svg>

@@ -3,14 +3,29 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
   margin: 0;
   min-height: 100%;
-  background: #0f0f0f;
+  background: #ffffff;
+  color: #17141f;
   font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+/* Soft brand blobs so glass panels stay readable on white */
+.bg-blobs {
+  background-color: #ffffff;
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(138, 63, 252, 0.09) 0 180px, transparent 181px),
+    radial-gradient(circle at 88% 12%, rgba(179, 145, 245, 0.11) 0 160px, transparent 161px),
+    radial-gradient(circle at 50% 100%, rgba(138, 63, 252, 0.06) 0 220px, transparent 221px);
 }
 
 @layer components {
@@ -23,23 +38,27 @@ body {
   }
 
   .btn-ghost {
-    @apply btn border border-line bg-transparent text-white hover:border-soft hover:text-soft;
+    @apply btn border border-line bg-white/50 text-ink backdrop-blur-md hover:border-brand hover:text-brand;
   }
 
   .btn-muted {
-    @apply btn bg-panel text-white hover:bg-line;
+    @apply btn border border-line bg-white/40 text-ink backdrop-blur-md hover:bg-white/70;
   }
 
   .field {
-    @apply w-full rounded-btn border border-line bg-ink px-3.5 py-2.5 text-sm text-white outline-none transition placeholder:text-mute focus:border-brand;
+    @apply w-full rounded-btn border border-line bg-white/60 px-3.5 py-2.5 text-sm text-ink outline-none backdrop-blur-md transition placeholder:text-mute focus:border-brand;
   }
 
   .panel {
-    @apply rounded-panel border border-line bg-panel;
+    @apply rounded-panel border border-white/70 bg-white/55 shadow-glass backdrop-blur-glass;
+  }
+
+  .glass {
+    @apply rounded-panel border border-white/70 bg-white/50 shadow-glass backdrop-blur-glass;
   }
 
   .section-title {
-    @apply text-3xl font-bold tracking-tight text-white md:text-4xl;
+    @apply text-3xl font-bold tracking-tight text-ink md:text-4xl;
   }
 
   .section-copy {
@@ -47,7 +66,6 @@ body {
   }
 }
 
-/* terminal cursor blink */
 @keyframes blink {
   0%,
   49% {
