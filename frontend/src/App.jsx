@@ -773,7 +773,7 @@ export default function App() {
         </section>
 
         {/* CTA */}
-        <section className="border-t border-line py-12 md:py-16">
+        <section className="border-t border-line bg-[#f7f7f7] py-12 md:py-16">
           <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
             <div className="panel flex flex-col items-start justify-between gap-5 p-6 sm:p-8 md:flex-row md:items-center">
               <div>
