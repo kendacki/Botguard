@@ -137,18 +137,6 @@ export default function HeroScene() {
             <stop offset="50%" stopColor={PURPLE_SOFT} stopOpacity="1" />
             <stop offset="100%" stopColor={PURPLE} stopOpacity="0" />
           </linearGradient>
-          <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(138,63,252,0.28)" />
-            <stop offset="55%" stopColor="rgba(138,63,252,0.08)" />
-            <stop offset="100%" stopColor="rgba(138,63,252,0)" />
-          </radialGradient>
-          <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="1.8" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
           <clipPath id="globeClip">
             <circle cx="0" cy="0" r="98" />
           </clipPath>
@@ -157,9 +145,6 @@ export default function HeroScene() {
             <stop offset="100%" stopColor="#F7F6F3" stopOpacity="0.65" />
           </linearGradient>
         </defs>
-
-        {/* Soft circular glow — perfect circle, not an oval bloom */}
-        <circle cx="0" cy="0" r="150" fill="url(#coreGlow)" opacity="0.9" />
 
         <Spin dur="55s" reverse>
           <circle
@@ -207,7 +192,6 @@ export default function HeroScene() {
               cy={d.y}
               r={d.r}
               fill={i % 2 ? PURPLE_SOFT : PURPLE}
-              filter="url(#softGlow)"
             />
           ))}
         </Spin>
@@ -222,7 +206,6 @@ export default function HeroScene() {
             strokeWidth="2.2"
             strokeLinecap="round"
             strokeDasharray="68 720"
-            filter="url(#softGlow)"
           />
         </Spin>
 
@@ -300,31 +283,12 @@ export default function HeroScene() {
             <Signal from="k" to="n" delay={0.7} />
             <Signal from="m" to="f" delay={2.5} />
 
-            {nodes.map((n, i) => (
-              <g key={n.id}>
-                <circle cx={n.x} cy={n.y} r="6" fill="rgba(138,63,252,0.14)">
-                  <animate
-                    attributeName="r"
-                    values="4.5;8;4.5"
-                    dur="2.5s"
-                    begin={`${i * 0.1}s`}
-                    repeatCount="indefinite"
-                  />
-                  <animate
-                    attributeName="opacity"
-                    values="0.3;0.8;0.3"
-                    dur="2.5s"
-                    begin={`${i * 0.1}s`}
-                    repeatCount="indefinite"
-                  />
-                </circle>
-                <circle cx={n.x} cy={n.y} r="2.3" fill={PURPLE} filter="url(#softGlow)" />
-              </g>
+            {nodes.map((n) => (
+              <circle key={n.id} cx={n.x} cy={n.y} r="2.3" fill={PURPLE} />
             ))}
           </g>
         </Spin>
 
-        <circle cx="-32" cy="-38" r="14" fill="rgba(255,255,255,0.35)" />
         <circle cx="0" cy="0" r="98" fill="none" stroke="rgba(138,63,252,0.32)" strokeWidth="1" />
         <rect x="-170" y="24" width="340" height="146" fill="url(#horizonFade)" />
       </svg>
