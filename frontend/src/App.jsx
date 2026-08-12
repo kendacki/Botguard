@@ -12,7 +12,6 @@ import {
 import Logo from "./components/Logo.jsx";
 import Modal from "./components/Modal.jsx";
 import Alert from "./components/Alert.jsx";
-import HeroScene from "./components/HeroScene.jsx";
 import SignedApp from "./pages/SignedApp.jsx";
 import { api, DEMO_API_KEY, shortAddr } from "./lib/api.js";
 
@@ -466,8 +465,30 @@ export default function App() {
       ) : (
       <>
       <main id="top">
-        <section className="relative overflow-hidden">
-          <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center px-4 pb-8 pt-16 text-center md:px-6 md:pb-10 md:pt-24">
+        <section className="relative min-h-[min(92vh,820px)] overflow-hidden">
+          <div className="absolute inset-0">
+            <video
+              className="h-full w-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              poster="/videos/hero-poster.jpg"
+            >
+              <source src="/videos/hero.mp4" type="video/mp4" />
+            </video>
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(247,246,243,0.72) 0%, rgba(247,246,243,0.55) 45%, rgba(247,246,243,0.88) 100%)",
+              }}
+              aria-hidden="true"
+            />
+          </div>
+
+          <div className="relative mx-auto flex min-h-[min(92vh,820px)] w-full max-w-4xl flex-col items-center justify-center px-4 pb-16 pt-20 text-center md:px-6 md:pb-20 md:pt-24">
             <motion.div
               className="flex w-full flex-col items-center"
               variants={heroContainer}
@@ -505,18 +526,6 @@ export default function App() {
               </motion.div>
             </motion.div>
           </div>
-
-          <motion.div
-            className="relative mx-auto h-[min(52vw,280px)] w-full max-w-6xl overflow-hidden sm:h-[320px] md:h-[390px]"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, duration: 0.8, ease: easeOut }}
-            aria-hidden="true"
-          >
-            <div className="absolute left-1/2 top-0 w-[min(150vw,920px)] -translate-x-1/2">
-              <HeroScene />
-            </div>
-          </motion.div>
         </section>
 
         {/* Product */}
