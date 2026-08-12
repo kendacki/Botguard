@@ -1,139 +1,215 @@
 import { motion } from "framer-motion";
-import { Check, Shield } from "lucide-react";
 
-const ease = [0.22, 1, 0.36, 1];
+const PURPLE = "#8A3FFC";
 
-const steps = [
-  { label: "Hash commitment", delay: 0.45 },
-  { label: "Issuer signed", delay: 0.9 },
-  { label: "On chain confirm", delay: 1.35 },
+const nodes = [
+  { id: "a", x: 0, y: -72 },
+  { id: "b", x: 58, y: -38 },
+  { id: "c", x: 78, y: 8 },
+  { id: "d", x: 48, y: 52 },
+  { id: "e", x: -8, y: 70 },
+  { id: "f", x: -62, y: 36 },
+  { id: "g", x: -76, y: -12 },
+  { id: "h", x: -42, y: -54 },
+  { id: "i", x: 18, y: -18 },
+  { id: "j", x: -22, y: 22 },
+  { id: "k", x: 36, y: 18 },
 ];
+
+const links = [
+  ["a", "b"],
+  ["b", "c"],
+  ["c", "d"],
+  ["d", "e"],
+  ["e", "f"],
+  ["f", "g"],
+  ["g", "h"],
+  ["h", "a"],
+  ["a", "i"],
+  ["i", "k"],
+  ["k", "d"],
+  ["i", "j"],
+  ["j", "f"],
+  ["j", "e"],
+  ["b", "k"],
+  ["g", "j"],
+];
+
+const map = Object.fromEntries(nodes.map((n) => [n.id, n]));
 
 export default function HeroScene() {
   return (
     <motion.div
-      className="relative overflow-hidden rounded-[22px] bg-[#faf9fb] p-5 sm:p-7"
-      initial={{ opacity: 0, y: 28, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.7, ease }}
+      className="relative mx-auto aspect-square w-full max-w-[440px]"
+      initial={{ opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+      aria-hidden="true"
     >
       <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden="true"
+        className="pointer-events-none absolute inset-[10%] rounded-full blur-3xl"
         style={{
           background:
-            "radial-gradient(ellipse 70% 55% at 85% 10%, rgba(138,63,252,0.08), transparent 55%), radial-gradient(ellipse 50% 40% at 10% 90%, rgba(23,20,31,0.04), transparent 50%)",
+            "radial-gradient(circle, rgba(138,63,252,0.32) 0%, rgba(138,63,252,0.1) 42%, transparent 70%)",
         }}
       />
 
-      <div className="relative mb-6 flex items-center justify-between">
-        <motion.p
-          className="text-xs font-semibold uppercase tracking-[0.14em] text-mute"
-          initial={{ opacity: 0, x: -8 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2, duration: 0.45, ease }}
+      <svg viewBox="-150 -150 300 300" className="h-full w-full overflow-visible">
+        <defs>
+          <radialGradient id="globeFill" cx="32%" cy="28%" r="68%">
+            <stop offset="0%" stopColor="rgba(138,63,252,0.28)" />
+            <stop offset="50%" stopColor="rgba(138,63,252,0.1)" />
+            <stop offset="100%" stopColor="rgba(250,249,252,0.95)" />
+          </radialGradient>
+          <linearGradient id="globeRim" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={PURPLE} stopOpacity="0.65" />
+            <stop offset="100%" stopColor={PURPLE} stopOpacity="0.25" />
+          </linearGradient>
+          <clipPath id="globeClip">
+            <circle cx="0" cy="0" r="96" />
+          </clipPath>
+        </defs>
+
+        {/* Outer orbit */}
+        <motion.g
+          animate={{ rotate: 360 }}
+          transition={{ duration: 42, repeat: Infinity, ease: "linear" }}
+          style={{ transformOrigin: "0px 0px" }}
         >
-          Live issue loop
-        </motion.p>
-        <motion.span
-          className="inline-flex items-center gap-1.5 rounded-full bg-ok/10 px-2.5 py-1 text-[11px] font-semibold text-ok"
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1.9, duration: 0.4, ease }}
-        >
-          <motion.span
-            className="h-1.5 w-1.5 rounded-full bg-ok"
-            animate={{ scale: [1, 1.35, 1], opacity: [1, 0.55, 1] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+          <circle
+            cx="0"
+            cy="0"
+            r="128"
+            fill="none"
+            stroke="rgba(138,63,252,0.22)"
+            strokeWidth="1"
+            strokeDasharray="2 10"
           />
-          Valid
-        </motion.span>
-      </div>
+          {[0, 72, 144, 216, 288].map((deg) => {
+            const rad = (deg * Math.PI) / 180;
+            return (
+              <circle
+                key={`orbit-${deg}`}
+                cx={Math.cos(rad) * 128}
+                cy={Math.sin(rad) * 128}
+                r="2.2"
+                fill={PURPLE}
+              />
+            );
+          })}
+        </motion.g>
 
-      <div className="relative grid gap-5 sm:grid-cols-[1.05fr_0.95fr]">
-        <div className="space-y-2.5">
-          {steps.map((step, index) => (
-            <motion.div
-              key={step.label}
-              className="flex items-center gap-3 rounded-2xl bg-white/80 px-3.5 py-3"
-              initial={{ opacity: 0, x: -18 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: step.delay, duration: 0.45, ease }}
-            >
-              <motion.span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand"
-                initial={{ scale: 0.6, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: step.delay + 0.12, type: "spring", stiffness: 320, damping: 18 }}
-              >
-                <Check size={15} strokeWidth={2.6} />
-              </motion.span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-ink">{step.label}</p>
-                <p className="truncate text-xs text-mute">Step {index + 1} of 3</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        <motion.div
-          className="relative flex min-h-[210px] flex-col items-center justify-center rounded-2xl bg-white/80 px-4 py-6"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.55, ease }}
+        {/* Counter-orbit of tiny satellite dots */}
+        <motion.g
+          animate={{ rotate: -360 }}
+          transition={{ duration: 56, repeat: Infinity, ease: "linear" }}
+          style={{ transformOrigin: "0px 0px" }}
         >
-          <motion.div
-            className="relative flex h-28 w-28 items-center justify-center"
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <motion.div
-              className="absolute inset-0 rounded-[28px] bg-brand/10"
-              animate={{ scale: [1, 1.08, 1], opacity: [0.55, 0.25, 0.55] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-              className="relative flex h-20 w-20 items-center justify-center rounded-[22px] bg-brand text-white shadow-soft"
-              initial={{ scale: 0.7, rotate: -8, opacity: 0 }}
-              animate={{ scale: 1, rotate: 0, opacity: 1 }}
-              transition={{ delay: 0.45, type: "spring", stiffness: 240, damping: 16 }}
-            >
-              <Shield size={34} strokeWidth={2.2} />
-            </motion.div>
-          </motion.div>
+          <circle
+            cx="0"
+            cy="0"
+            r="142"
+            fill="none"
+            stroke="rgba(138,63,252,0.12)"
+            strokeWidth="0.8"
+          />
+          {[30, 100, 170, 250, 320].map((deg) => {
+            const rad = (deg * Math.PI) / 180;
+            return (
+              <circle
+                key={`sat-${deg}`}
+                cx={Math.cos(rad) * 142}
+                cy={Math.sin(rad) * 142}
+                r="1.5"
+                fill={PURPLE}
+                opacity="0.7"
+              />
+            );
+          })}
+        </motion.g>
 
-          <motion.p
-            className="mt-4 text-sm font-semibold text-ink"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.6, duration: 0.4, ease }}
-          >
-            Credential ready
-          </motion.p>
-          <motion.p
-            className="mt-1 text-center text-xs text-mute"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.8, duration: 0.4 }}
-          >
-            Tier RETAIL · Region NG
-          </motion.p>
+        {/* Globe shell */}
+        <circle cx="0" cy="0" r="96" fill="url(#globeFill)" stroke="url(#globeRim)" strokeWidth="1.5" />
 
-          <motion.div
-            className="mt-4 h-1.5 w-full max-w-[180px] overflow-hidden rounded-full bg-neutral-200/80"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            <motion.div
-              className="h-full rounded-full bg-brand"
-              initial={{ width: "8%" }}
-              animate={{ width: "100%" }}
-              transition={{ delay: 0.7, duration: 1.4, ease }}
-            />
-          </motion.div>
-        </motion.div>
-      </div>
+        {/* Revolving mesh + network */}
+        <motion.g
+          animate={{ rotate: 360 }}
+          transition={{ duration: 26, repeat: Infinity, ease: "linear" }}
+          style={{ transformOrigin: "0px 0px" }}
+        >
+          <g clipPath="url(#globeClip)">
+            {[-60, -30, 0, 30, 60].map((lat) => {
+              const cy = Math.sin((lat * Math.PI) / 180) * 96;
+              const rx = Math.cos((lat * Math.PI) / 180) * 96;
+              return (
+                <ellipse
+                  key={`lat-${lat}`}
+                  cx="0"
+                  cy={cy}
+                  rx={Math.max(10, Math.abs(rx))}
+                  ry={Math.max(6, Math.abs(rx) * 0.18)}
+                  fill="none"
+                  stroke="rgba(138,63,252,0.2)"
+                  strokeWidth="0.85"
+                />
+              );
+            })}
+
+            {[0, 30, 60, 90, 120, 150].map((lon) => (
+              <ellipse
+                key={`lon-${lon}`}
+                cx="0"
+                cy="0"
+                rx={14 + Math.abs(Math.cos((lon * Math.PI) / 180)) * 82}
+                ry="96"
+                fill="none"
+                stroke="rgba(138,63,252,0.18)"
+                strokeWidth="0.8"
+                transform={`rotate(${lon})`}
+              />
+            ))}
+
+            {links.map(([from, to]) => {
+              const a = map[from];
+              const b = map[to];
+              return (
+                <line
+                  key={`${from}-${to}`}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  stroke="rgba(138,63,252,0.42)"
+                  strokeWidth="0.95"
+                  strokeLinecap="round"
+                />
+              );
+            })}
+
+            {nodes.map((n, i) => (
+              <g key={n.id}>
+                <motion.circle
+                  cx={n.x}
+                  cy={n.y}
+                  r="6"
+                  fill="rgba(138,63,252,0.14)"
+                  animate={{ r: [4.5, 8, 4.5], opacity: [0.4, 0.85, 0.4] }}
+                  transition={{
+                    duration: 2.2,
+                    repeat: Infinity,
+                    delay: i * 0.16,
+                    ease: "easeInOut",
+                  }}
+                />
+                <circle cx={n.x} cy={n.y} r="2.3" fill={PURPLE} />
+              </g>
+            ))}
+          </g>
+        </motion.g>
+
+        <ellipse cx="-34" cy="-40" rx="26" ry="16" fill="rgba(255,255,255,0.42)" />
+        <circle cx="0" cy="0" r="96" fill="none" stroke="rgba(138,63,252,0.3)" strokeWidth="1" />
+      </svg>
     </motion.div>
   );
 }
