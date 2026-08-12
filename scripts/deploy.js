@@ -3,8 +3,24 @@ const path = require("path");
 const hre = require("hardhat");
 
 async function main() {
-  const [deployer, issuer, monitor, holder] = await hre.ethers.getSigners();
+  const signers = await hre.ethers.getSigners();
+  const [deployer, issuer, monitor, holder] = signers;
+  const treasurySigner = signers[4];
   console.log("Deploying BOTGUARD with:", deployer.address);
+
+  const treasuryAddress =
+    process.env.TREASURY_ADDRESS && process.env.TREASURY_ADDRESS !== deployer.address
+      ? process.env.TREASURY_ADDRESS
+      : treasurySigner.address;
+
+  if (treasuryAddress.toLowerCase() === deployer.address.toLowerCase()) {
+    throw new Error("TREASURY_ADDRESS must be distinct from governance/deployer");
+  }
+
+  // BOT uses 18 decimals (same as ether units); 0.5 BOT = 5e17 wei
+  const verificationFee = process.env.VERIFICATION_FEE
+    ? BigInt(process.env.VERIFICATION_FEE)
+    : hre.ethers.parseEther("0.5");
 
   const IssuerRegistry = await hre.ethers.getContractFactory("IssuerRegistry");
   const issuerRegistry = await IssuerRegistry.deploy(deployer.address);
@@ -13,10 +29,17 @@ async function main() {
   console.log("IssuerRegistry:", issuerRegistryAddress);
 
   const CredentialRegistry = await hre.ethers.getContractFactory("CredentialRegistry");
-  const credentialRegistry = await CredentialRegistry.deploy(issuerRegistryAddress, deployer.address);
+  const credentialRegistry = await CredentialRegistry.deploy(
+    issuerRegistryAddress,
+    deployer.address,
+    treasuryAddress,
+    verificationFee
+  );
   await credentialRegistry.waitForDeployment();
   const credentialRegistryAddress = await credentialRegistry.getAddress();
   console.log("CredentialRegistry:", credentialRegistryAddress);
+  console.log("Treasury:", treasuryAddress);
+  console.log("VerificationFee:", verificationFee.toString());
 
   await (await issuerRegistry.registerIssuer(issuer.address, "BOTGUARD Demo Issuer", 1)).wait();
   await (await credentialRegistry.authorizeMonitor(monitor.address)).wait();
@@ -48,6 +71,8 @@ async function main() {
     issuer: issuer.address,
     monitor: monitor.address,
     holder: holder.address,
+    treasury: treasuryAddress,
+    verificationFee: verificationFee.toString(),
     contracts: {
       IssuerRegistry: issuerRegistryAddress,
       CredentialRegistry: credentialRegistryAddress,
@@ -57,6 +82,8 @@ async function main() {
       ISSUER_REGISTRY_ADDRESS: issuerRegistryAddress,
       CREDENTIAL_REGISTRY_ADDRESS: credentialRegistryAddress,
       EXAMPLE_RWA_TOKEN_ADDRESS: rwaTokenAddress,
+      TREASURY_ADDRESS: treasuryAddress,
+      VERIFICATION_FEE: verificationFee.toString(),
     },
     deployedAt: new Date().toISOString(),
   };
@@ -66,7 +93,6 @@ async function main() {
   const outPath = path.join(outDir, `${hre.network.name}.json`);
   fs.writeFileSync(outPath, JSON.stringify(deployment, null, 2));
 
-  // Convenience env file for docker-compose / services
   const envPath = path.join(__dirname, "..", "deployments", `${hre.network.name}.env`);
   fs.writeFileSync(
     envPath,
@@ -74,6 +100,8 @@ async function main() {
       `ISSUER_REGISTRY_ADDRESS=${issuerRegistryAddress}`,
       `CREDENTIAL_REGISTRY_ADDRESS=${credentialRegistryAddress}`,
       `EXAMPLE_RWA_TOKEN_ADDRESS=${rwaTokenAddress}`,
+      `TREASURY_ADDRESS=${treasuryAddress}`,
+      `VERIFICATION_FEE=${verificationFee.toString()}`,
       `CHAIN_RPC_URL=http://127.0.0.1:8545`,
       `BOTCHAIN_TESTNET_RPC=http://127.0.0.1:8545`,
     ].join("\n") + "\n"

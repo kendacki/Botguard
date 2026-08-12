@@ -141,6 +141,9 @@ async function updateVerification(requestId, patch) {
     txHash: "tx_hash",
     failureReason: "failure_reason",
     commitmentHash: "commitment_hash",
+    feeAmount: "fee_amount",
+    feeTxHash: "fee_tx_hash",
+    feeStatus: "fee_status",
   };
   const fields = [];
   const values = [];
@@ -157,6 +160,86 @@ async function updateVerification(requestId, patch) {
     values
   );
   return getVerification(requestId);
+}
+
+async function upsertFeeStatus({
+  holderAddress,
+  feeAmount,
+  feeTxHash,
+  feeStatus,
+  blockNumber,
+}) {
+  const key = holderAddress.toLowerCase();
+  const row = {
+    holderAddress,
+    feeAmount: feeAmount != null ? String(feeAmount) : null,
+    feeTxHash: feeTxHash || null,
+    feeStatus: feeStatus || null,
+    blockNumber: blockNumber || 0,
+    updatedAt: nowIso(),
+  };
+
+  if (useMemory) {
+    db.store.fee_status.set(key, row);
+    // Mirror onto latest verification request for this holder when present.
+    for (const req of db.store.verification_requests.values()) {
+      if (req.holderAddress.toLowerCase() === key) {
+        req.feeAmount = row.feeAmount;
+        req.feeTxHash = row.feeTxHash;
+        req.feeStatus = row.feeStatus;
+        req.updatedAt = row.updatedAt;
+      }
+    }
+    return row;
+  }
+
+  await db.pool.query(
+    `INSERT INTO verification_requests
+      (request_id, holder_address, issuer_address, status, requested_tier, fee_amount, fee_tx_hash, fee_status)
+     SELECT gen_random_uuid(), $1,
+            COALESCE((SELECT issuer_address FROM issuers WHERE active = TRUE LIMIT 1), $1),
+            'PENDING', 1, $2, $3, $4
+     WHERE NOT EXISTS (
+       SELECT 1 FROM verification_requests WHERE lower(holder_address) = lower($1) AND fee_status = 'ESCROWED'
+     )`,
+    [holderAddress, row.feeAmount, row.feeTxHash, row.feeStatus === "ESCROWED" ? "ESCROWED" : null]
+  );
+
+  await db.pool.query(
+    `UPDATE verification_requests
+     SET fee_amount = COALESCE($2, fee_amount),
+         fee_tx_hash = COALESCE($3, fee_tx_hash),
+         fee_status = $4,
+         updated_at = NOW()
+     WHERE lower(holder_address) = lower($1)
+       AND created_at = (
+         SELECT MAX(created_at) FROM verification_requests WHERE lower(holder_address) = lower($1)
+       )`,
+    [holderAddress, row.feeAmount, row.feeTxHash, row.feeStatus]
+  );
+
+  return row;
+}
+
+async function getFeeStatus(holderAddress) {
+  const key = holderAddress.toLowerCase();
+  if (useMemory) {
+    return db.store.fee_status.get(key) || null;
+  }
+  const result = await db.pool.query(
+    `SELECT holder_address AS "holderAddress",
+            fee_amount AS "feeAmount",
+            fee_tx_hash AS "feeTxHash",
+            fee_status AS "feeStatus",
+            updated_at AS "updatedAt"
+     FROM verification_requests
+     WHERE lower(holder_address) = $1
+       AND fee_status IS NOT NULL
+     ORDER BY updated_at DESC
+     LIMIT 1`,
+    [key]
+  );
+  return result.rows[0] || null;
 }
 
 async function listPendingVerifications(limit = 10) {
@@ -336,6 +419,8 @@ module.exports = {
   recentHighFlags,
   indexerLag,
   setIndexerState,
+  upsertFeeStatus,
+  getFeeStatus,
   normalizeTier,
   tierLabel,
   commitmentHashFallback,

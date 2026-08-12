@@ -156,6 +156,12 @@ export default function SignedApp({
   setOpenFaq,
   faqs,
   onVerify,
+  onPayFee,
+  onReject,
+  feeStatus,
+  feeBusy,
+  feeEscrowed,
+  verificationFeeLabel,
   onRefresh,
   onRevoke,
 }) {
@@ -357,6 +363,47 @@ export default function SignedApp({
                   </div>
                 </div>
 
+                <div className="glass-soft mt-4 px-3.5 py-3.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-semibold text-ink">Step 1 · Pay verification fee</p>
+                      <p className="mt-0.5 text-[11px] text-mute">
+                        Escrow {verificationFeeLabel || "0.5 BOT"} from this wallet. No tier data is
+                        published with the payment.
+                      </p>
+                    </div>
+                    <StatusPill
+                      ok={feeEscrowed || feeStatus?.feeStatus === "SETTLED"}
+                      label={
+                        feeBusy
+                          ? "Confirming…"
+                          : feeStatus?.feeStatus || (feeEscrowed ? "ESCROWED" : "Unpaid")
+                      }
+                    />
+                  </div>
+                  <motion.button
+                    type="button"
+                    className="btn-primary mt-3 h-10 w-full text-sm"
+                    disabled={busy || feeBusy || feeEscrowed || feeStatus?.feeStatus === "SETTLED"}
+                    onClick={onPayFee}
+                    whileHover={{ y: -1 }}
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    {feeBusy
+                      ? "Confirming payment…"
+                      : feeEscrowed
+                        ? "Fee escrowed"
+                        : feeStatus?.feeStatus === "SETTLED"
+                          ? "Fee settled"
+                          : `Pay ${verificationFeeLabel || "0.5 BOT"}`}
+                  </motion.button>
+                  {feeEscrowed ? (
+                    <p className="mt-2 text-[11px] leading-relaxed text-mute">
+                      Escrowed and awaiting issuer review. You can submit verification next.
+                    </p>
+                  ) : null}
+                </div>
+
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <label className="block text-[11px] font-medium text-mute">
                     <span className="mb-1.5 inline-flex items-center gap-1.5">
@@ -391,7 +438,7 @@ export default function SignedApp({
 
                 <div className="glass-soft mt-4 px-3.5 py-3.5">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-semibold text-ink">Live pipeline</p>
+                    <p className="text-xs font-semibold text-ink">Step 2 · Issuer actions</p>
                     <StatusPill ok={valid} label={valid ? "Valid" : verification?.status || "Idle"} />
                   </div>
                   <div className="mt-3 space-y-2 text-xs">
@@ -407,6 +454,10 @@ export default function SignedApp({
                         {verification?.txHash ? shortAddr(verification.txHash) : "—"}
                       </span>
                     </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-mute">Fee status</span>
+                      <span className="font-medium text-ink">{feeStatus?.feeStatus || "—"}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -417,27 +468,37 @@ export default function SignedApp({
                   <motion.button
                     type="button"
                     className="btn-primary h-11 flex-1"
-                    disabled={busy}
+                    disabled={busy || feeBusy || !feeEscrowed}
                     onClick={onVerify}
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.99 }}
                   >
                     <ShieldCheck size={15} />
-                    {busy ? "Submitting…" : "Submit verification"}
+                    {busy ? "Submitting…" : "Approve / issue"}
                   </motion.button>
-                  <button type="button" className="btn-ghost h-11 flex-1" disabled={busy} onClick={onRefresh}>
-                    <RefreshCw size={15} />
-                    Check status
+                  <button
+                    type="button"
+                    className="btn-ghost h-11 flex-1"
+                    disabled={busy || feeBusy || !feeEscrowed}
+                    onClick={onReject}
+                  >
+                    Reject & refund
                   </button>
                 </div>
-                <button
-                  type="button"
-                  className="btn-muted mt-2 h-10 w-full text-xs"
-                  disabled={busy || !valid}
-                  onClick={onRevoke}
-                >
-                  Revoke credential
-                </button>
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                  <button type="button" className="btn-ghost h-10 flex-1 text-xs" disabled={busy} onClick={onRefresh}>
+                    <RefreshCw size={14} />
+                    Check status
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-muted h-10 flex-1 text-xs"
+                    disabled={busy || !valid}
+                    onClick={onRevoke}
+                  >
+                    Revoke credential
+                  </button>
+                </div>
               </div>
             </motion.div>
           ) : null}

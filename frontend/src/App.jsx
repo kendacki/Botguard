@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { BrowserProvider, keccak256, toUtf8Bytes } from "ethers";
+import { BrowserProvider, Contract, keccak256, toUtf8Bytes, parseEther, formatEther } from "ethers";
 import {
   ArrowRight,
   Copy,
@@ -119,9 +119,35 @@ export default function App() {
   const [hasInjectedWallet, setHasInjectedWallet] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
   const [appView, setAppView] = useState("home");
+  const [feeStatus, setFeeStatus] = useState(null);
+  const [feeBusy, setFeeBusy] = useState(false);
+  const [verificationFee, setVerificationFee] = useState(parseEther("0.5").toString());
 
   const valid = Boolean(credential?.valid);
   const connected = Boolean(account && /^0x[a-fA-F0-9]{40}$/.test(account));
+  const feeEscrowed = feeStatus?.feeStatus === "ESCROWED" || feeStatus?.escrowed === true;
+
+  const REGISTRY_FEE_ABI = [
+    "function payFeeAndRequestVerification() payable",
+    "function verificationFee() view returns (uint256)",
+    "function escrowedFee(address holder) view returns (uint256)",
+  ];
+
+  async function loadFeeStatus(address = account) {
+    if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      setFeeStatus(null);
+      return null;
+    }
+    try {
+      const row = await api(`/verifications/fee-status/${address}`);
+      setFeeStatus(row);
+      if (row.verificationFee) setVerificationFee(row.verificationFee);
+      return row;
+    } catch {
+      setFeeStatus(null);
+      return null;
+    }
+  }
 
   const signedNav = [
     { id: "home", label: "Home", icon: Home },
@@ -143,10 +169,12 @@ export default function App() {
     setAccount(addr);
     if (!addr) {
       setCredential(null);
+      setFeeStatus(null);
       setChainLabel("");
       return;
     }
     await loadCredentialFor(addr);
+    await loadFeeStatus(addr);
     setAppView("home");
     if (opts.closeModal) setWalletOpen(false);
   }
@@ -304,6 +332,7 @@ export default function App() {
     setAccount("");
     setManualAddress("");
     setCredential(null);
+    setFeeStatus(null);
     setChainLabel("");
     setWalletSuccess("");
     setWalletError("");
@@ -322,6 +351,10 @@ export default function App() {
     }
     if (!/^0x[a-fA-F0-9]{40}$/.test(account)) {
       setError("Enter a valid 0x address.");
+      return;
+    }
+    if (!feeEscrowed) {
+      setError("Pay the 0.5 BOT verification fee first.");
       return;
     }
     setBusy(true);
@@ -343,6 +376,88 @@ export default function App() {
       setVerificationId(accepted.requestId);
       setVerification(accepted);
       setSuccess("Verification accepted. Waiting for confirm.");
+      await loadFeeStatus(account);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function payVerificationFee() {
+    setError("");
+    setSuccess("");
+    if (!window.ethereum) {
+      setError("Connect an injected wallet to pay the fee on chain.");
+      return;
+    }
+    if (!account) {
+      setError("Connect a wallet first.");
+      return;
+    }
+    setFeeBusy(true);
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      let registryAddress = import.meta.env.VITE_CREDENTIAL_REGISTRY_ADDRESS;
+      if (!registryAddress) {
+        try {
+          const dep = await fetch("/deployments/localhost.json").then((r) => (r.ok ? r.json() : null));
+          registryAddress = dep?.contracts?.CredentialRegistry;
+        } catch {
+          registryAddress = null;
+        }
+      }
+      if (!registryAddress) {
+        throw new Error("CredentialRegistry address not found. Deploy locally first.");
+      }
+      const registry = new Contract(registryAddress, REGISTRY_FEE_ABI, signer);
+      let fee = verificationFee;
+      try {
+        fee = (await registry.verificationFee()).toString();
+        setVerificationFee(fee);
+      } catch {
+        /* keep default */
+      }
+      setSuccess("Confirm the 0.5 BOT fee in your wallet…");
+      const tx = await registry.payFeeAndRequestVerification({ value: BigInt(fee) });
+      setSuccess("Payment submitted. Waiting for confirmation…");
+      await tx.wait();
+      await api(`/verifications/fee-status/${account}`).catch(() => null);
+      // Optimistic escrow mirror for memory/demo until indexer catches up
+      setFeeStatus({
+        holderAddress: account,
+        feeAmount: fee,
+        feeTxHash: tx.hash,
+        feeStatus: "ESCROWED",
+        escrowed: true,
+      });
+      setSuccess("Fee escrowed. Awaiting issuer review.");
+      await loadFeeStatus(account);
+    } catch (err) {
+      setError(err?.shortMessage || err.message || "Fee payment failed");
+    } finally {
+      setFeeBusy(false);
+    }
+  }
+
+  async function rejectVerificationRequest() {
+    setError("");
+    setSuccess("");
+    if (!account) return;
+    setBusy(true);
+    try {
+      const result = await api(`/verifications/${account}/reject`, {
+        method: "POST",
+        headers: { "X-BOTGUARD-Api-Key": DEMO_API_KEY },
+        body: JSON.stringify({}),
+      });
+      setSuccess(
+        result.txHash
+          ? `Rejected. Refund confirming (${shortAddr(result.txHash)}).`
+          : "Rejected. Fee refunded to holder."
+      );
+      await loadFeeStatus(account);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -478,6 +593,12 @@ export default function App() {
           setOpenFaq={setOpenFaq}
           faqs={faqs}
           onVerify={submitVerification}
+          onPayFee={payVerificationFee}
+          onReject={rejectVerificationRequest}
+          feeStatus={feeStatus}
+          feeBusy={feeBusy}
+          feeEscrowed={feeEscrowed}
+          verificationFeeLabel={`${formatEther(verificationFee)} BOT`}
           onRefresh={refreshCredential}
           onRevoke={revokeCredential}
         />

@@ -25,7 +25,7 @@ paths:
       description: >
         Called by an approved issuer's backend after they complete their own
         KYC flow. Body carries only a hash commitment and tier/jurisdiction,
-        never raw identity data.
+        never raw identity data. Prefer requiring an ESCROWED fee first.
       requestBody:
         required: true
         content:
@@ -47,6 +47,47 @@ paths:
           description: Issuer not active on IssuerRegistry
         '429':
           description: Rate limit exceeded, see Retry-After header
+
+  /verifications/fee:
+    get:
+      summary: Current on-chain verification fee
+      security: []
+      responses:
+        '200':
+          description: Fee amount in wei and human BOT units
+
+  /verifications/fee-status/{holderAddress}:
+    get:
+      summary: Escrowed fee status for a holder
+      security: []
+      parameters:
+        - name: holderAddress
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Fee escrow status
+        '404':
+          description: No fee status on record
+
+  /verifications/{holderAddress}/reject:
+    post:
+      summary: Reject a pending verification and refund escrowed fee
+      parameters:
+        - name: holderAddress
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Refund submitted
+        '400':
+          description: Reject failed
+        '401':
+          description: Invalid or missing API key
 
   /verifications/{requestId}:
     get:

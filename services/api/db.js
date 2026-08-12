@@ -7,6 +7,7 @@ function createMemoryStore() {
     issuers: new Map(),
     verification_requests: new Map(),
     credentials_cache: new Map(),
+    fee_status: new Map(),
     monitor_flags: [],
     audit_log: [],
     indexer_state: { last_block: 0, lag_seconds: 0 },

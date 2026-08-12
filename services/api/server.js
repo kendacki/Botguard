@@ -18,11 +18,13 @@ const {
   normalizeTier,
   tierLabel,
   commitmentHashFallback,
+  getFeeStatus,
+  upsertFeeStatus,
 } = require("./store");
 const { initCache, getCachedCredential, setCachedCredential, invalidateCredential } = require("./cache");
 const { decideActionFromFlags } = require("../monitor/rules");
 const { useMemory } = require("./db");
-const { issueOnChain } = require("./chain");
+const { issueOnChain, rejectOnChain, readEscrowedFee, readVerificationFee } = require("./chain");
 
 const PORT = Number(process.env.PORT || process.env.API_PORT || 8080);
 const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
@@ -77,6 +79,98 @@ app.get("/readyz", async (_req, res) => {
 
 app.get("/issuers", async (_req, res) => {
   res.json(await listIssuers());
+});
+
+app.get("/verifications/fee", async (_req, res) => {
+  const fee = await readVerificationFee();
+  res.json({
+    verificationFee: fee,
+    verificationFeeEth: Number(fee) / 1e18,
+    currency: "BOT",
+    decimals: 18,
+  });
+});
+
+app.get("/verifications/fee-status/:holderAddress", async (req, res) => {
+  const address = req.params.holderAddress;
+  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+    return res.status(400).json({ error: "Invalid holder address" });
+  }
+
+  let row = await getFeeStatus(address);
+  const onchain = await readEscrowedFee(address);
+
+  if (onchain && onchain.feeStatus === "ESCROWED" && (!row || row.feeStatus !== "ESCROWED")) {
+    row = await upsertFeeStatus({
+      holderAddress: address,
+      feeAmount: onchain.escrowedFee,
+      feeStatus: "ESCROWED",
+    });
+  }
+
+  if (!row && !onchain) {
+    return res.status(404).json({ error: "No fee status on record" });
+  }
+
+  const feeAmount = row?.feeAmount || onchain?.escrowedFee || "0";
+  const feeStatus =
+    row?.feeStatus ||
+    (onchain?.escrowedFee && BigInt(onchain.escrowedFee) > 0n ? "ESCROWED" : null) ||
+    null;
+
+  res.json({
+    holderAddress: address,
+    feeAmount,
+    feeTxHash: row?.feeTxHash || null,
+    feeStatus,
+    verificationFee: onchain?.verificationFee || (await readVerificationFee()),
+    escrowed: feeStatus === "ESCROWED",
+    source: row ? (useMemory ? "memory" : "postgres") : "chain",
+  });
+});
+
+app.post("/verifications/:holderAddress/reject", requireIssuer, async (req, res) => {
+  const holder = req.params.holderAddress;
+  if (!/^0x[a-fA-F0-9]{40}$/.test(holder)) {
+    return res.status(400).json({ error: "Invalid holder address" });
+  }
+
+  try {
+    if (process.env.BOTGUARD_MEMORY_MODE === "1" && !process.env.CHAIN_RPC_URL) {
+      await upsertFeeStatus({
+        holderAddress: holder,
+        feeStatus: "REFUNDED",
+        feeAmount: "0",
+      });
+      await writeAudit({
+        actorType: "ISSUER",
+        actorAddress: req.issuer.address,
+        action: "FEE_REFUNDED",
+        holderAddress: holder,
+        detail: { mode: "memory" },
+      });
+      return res.json({ status: "REFUNDED", holderAddress: holder, mode: "memory" });
+    }
+
+    const result = await rejectOnChain(holder);
+    if (!result) return res.status(503).json({ error: "Chain unavailable for reject" });
+
+    await upsertFeeStatus({
+      holderAddress: holder,
+      feeStatus: "REFUNDED",
+      feeTxHash: result.txHash,
+    });
+    await writeAudit({
+      actorType: "ISSUER",
+      actorAddress: req.issuer.address,
+      action: "FEE_REFUNDED",
+      holderAddress: holder,
+      txHash: result.txHash,
+    });
+    res.json({ status: "REFUNDED", holderAddress: holder, txHash: result.txHash });
+  } catch (err) {
+    res.status(400).json({ error: err.message || "Reject failed" });
+  }
 });
 
 app.post("/verifications", requireIssuer, async (req, res) => {

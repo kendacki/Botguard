@@ -36,6 +36,20 @@ contract CredentialRegistry {
     mapping(address => bool) public monitors;
     address public governance;
 
+    // ------------------------------------------------------------------
+    // Verification fee escrow. A wallet pays `verificationFee` up front to
+    // request verification. The payment event is deliberately minimal, no
+    // tier or jurisdiction is emitted, only the fact that this address has
+    // an escrowed payment, so a chain observer cannot infer what a pending
+    // applicant is applying for while the application is still in review.
+    // Funds settle to `treasury` only on approval (issueCredential), or
+    // refund to the holder on explicit rejection, never silently kept on
+    // a rejection.
+    // ------------------------------------------------------------------
+    uint256 public verificationFee;
+    address public treasury;
+    mapping(address => uint256) public escrowedFee;
+
     event CredentialIssued(
         address indexed holder,
         address indexed issuer,
@@ -47,6 +61,10 @@ contract CredentialRegistry {
     event CredentialRenewed(address indexed holder, uint64 newExpiresAt);
     event MonitorAuthorized(address indexed monitor);
     event MonitorRevoked(address indexed monitor);
+    event VerificationFeePaid(address indexed holder, uint256 amount, uint64 timestamp);
+    event FeeSettled(address indexed holder, uint256 amount, bool approved);
+    event VerificationFeeUpdated(uint256 oldFee, uint256 newFee);
+    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
 
     error NotGovernance();
     error NotActiveIssuer();
@@ -55,6 +73,11 @@ contract CredentialRegistry {
     error CredentialAlreadyRevoked();
     error InvalidExpiry();
     error NotIssuerOrGovernance();
+    error IncorrectFee(uint256 sent, uint256 required);
+    error FeeAlreadyEscrowed();
+    error NoFeeEscrowed();
+    error TreasuryTransferFailed();
+    error ZeroAddress();
 
     modifier onlyGovernance() {
         if (msg.sender != governance) revert NotGovernance();
@@ -66,9 +89,49 @@ contract CredentialRegistry {
         _;
     }
 
-    constructor(address _issuerRegistry, address _governance) {
+    constructor(address _issuerRegistry, address _governance, address _treasury, uint256 _verificationFee) {
+        if (_treasury == address(0)) revert ZeroAddress();
         issuerRegistry = IssuerRegistry(_issuerRegistry);
         governance = _governance;
+        treasury = _treasury;
+        verificationFee = _verificationFee; // e.g. 0.5 * 10**18 for 0.5 BOT on an 18-decimal chain
+    }
+
+    /// @notice Holder-initiated first step. The wallet being verified pays the fee itself,
+    ///         satisfying a genuine wallet-interaction flow rather than an issuer-only one.
+    ///         Emits no tier or jurisdiction, only the fact that a fee is escrowed, so the
+    ///         pending application's details are not publicly inferable from this event.
+    function payFeeAndRequestVerification() external payable {
+        if (msg.value != verificationFee) revert IncorrectFee(msg.value, verificationFee);
+        if (escrowedFee[msg.sender] != 0) revert FeeAlreadyEscrowed();
+
+        escrowedFee[msg.sender] = msg.value;
+        emit VerificationFeePaid(msg.sender, msg.value, uint64(block.timestamp));
+    }
+
+    /// @notice Issuer or governance rejects a pending application, refunding the escrowed
+    ///         fee in full. A rejection is not a punitive event, the wallet paid for the
+    ///         verification service to be performed, not for a guaranteed approval.
+    function rejectVerification(address holder) external {
+        if (msg.sender != governance && !issuerRegistry.isActiveIssuer(msg.sender)) revert NotActiveIssuer();
+        uint256 fee = escrowedFee[holder];
+        if (fee == 0) revert NoFeeEscrowed();
+
+        escrowedFee[holder] = 0;
+        (bool ok, ) = holder.call{value: fee}("");
+        if (!ok) revert TreasuryTransferFailed();
+        emit FeeSettled(holder, fee, false);
+    }
+
+    function setVerificationFee(uint256 newFee) external onlyGovernance {
+        emit VerificationFeeUpdated(verificationFee, newFee);
+        verificationFee = newFee;
+    }
+
+    function setTreasury(address newTreasury) external onlyGovernance {
+        if (newTreasury == address(0)) revert ZeroAddress();
+        emit TreasuryUpdated(treasury, newTreasury);
+        treasury = newTreasury;
     }
 
     /// @notice Issues or overwrites a credential for `holder`. Only callable by an active
@@ -97,6 +160,17 @@ contract CredentialRegistry {
         });
 
         emit CredentialIssued(holder, msg.sender, tier, jurisdiction, expiresAt);
+
+        // Settle any escrowed fee to treasury now that the credential is live. Issuance
+        // for a holder with no prior on-chain payment still succeeds, e.g. a fee-waived
+        // institutional onboarding, or a migration path, so this never blocks issuance.
+        uint256 fee = escrowedFee[holder];
+        if (fee != 0) {
+            escrowedFee[holder] = 0;
+            (bool ok, ) = treasury.call{value: fee}("");
+            if (!ok) revert TreasuryTransferFailed();
+            emit FeeSettled(holder, fee, true);
+        }
     }
 
     /// @notice Extends a credential's expiry without re-issuing, used for routine renewal

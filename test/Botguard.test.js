@@ -16,6 +16,7 @@ describe("BOTGUARD", function () {
 
   beforeEach(async function () {
     [governance, issuer, monitor, alice, bob] = await ethers.getSigners();
+    const treasury = (await ethers.getSigners())[6];
 
     const IssuerRegistry = await ethers.getContractFactory("IssuerRegistry");
     issuerRegistry = await IssuerRegistry.deploy(governance.address);
@@ -23,7 +24,9 @@ describe("BOTGUARD", function () {
     const CredentialRegistry = await ethers.getContractFactory("CredentialRegistry");
     credentialRegistry = await CredentialRegistry.deploy(
       await issuerRegistry.getAddress(),
-      governance.address
+      governance.address,
+      treasury.address,
+      ethers.parseEther("0.5")
     );
 
     await issuerRegistry.registerIssuer(issuer.address, "Test Issuer", 2);
