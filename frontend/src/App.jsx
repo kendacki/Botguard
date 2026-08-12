@@ -19,6 +19,7 @@ import Modal from "./components/Modal.jsx";
 import Alert from "./components/Alert.jsx";
 import SignedApp from "./pages/SignedApp.jsx";
 import { api, DEMO_API_KEY, shortAddr } from "./lib/api.js";
+import { BOT_CHAIN, ensureBotChain, explorerTxUrl } from "./lib/chain.js";
 
 const easeOut = [0.22, 1, 0.36, 1];
 const heroContainer = {
@@ -144,10 +145,18 @@ export default function App() {
       if (row.verificationFee) setVerificationFee(row.verificationFee);
       return row;
     } catch {
-      setFeeStatus(null);
+      // Keep optimistic ESCROWED after pay if API briefly 404s (memory/indexer lag).
+      setFeeStatus((prev) =>
+        prev?.holderAddress?.toLowerCase() === address.toLowerCase() &&
+        prev?.feeStatus === "ESCROWED"
+          ? prev
+          : null
+      );
       return null;
     }
   }
+
+  const feeLabel = `${formatEther(verificationFee)} BOT`;
 
   const signedNav = [
     { id: "home", label: "Home", icon: Home },
@@ -192,7 +201,7 @@ export default function App() {
         1: "Ethereum",
         11155111: "Sepolia",
         31337: "Localhost",
-        8080: "BOT Chain",
+        [BOT_CHAIN.chainId]: BOT_CHAIN.name,
       };
       setChainLabel(names[id] || `Chain ${id}`);
     } catch {
@@ -254,6 +263,7 @@ export default function App() {
           } catch {
             /* wait for cache */
           }
+          if (alive) await loadFeeStatus(account);
         }
       } catch {
         /* ignore poll noise */
@@ -354,7 +364,7 @@ export default function App() {
       return;
     }
     if (!feeEscrowed) {
-      setError("Pay the 0.5 BOT verification fee first.");
+      setError(`Pay the ${feeLabel} verification fee first.`);
       return;
     }
     setBusy(true);
@@ -397,7 +407,13 @@ export default function App() {
     }
     setFeeBusy(true);
     try {
+      await ensureBotChain(window.ethereum);
+      await refreshChainLabel();
       const provider = new BrowserProvider(window.ethereum);
+      const network = await provider.getNetwork();
+      if (Number(network.chainId) !== BOT_CHAIN.chainId) {
+        throw new Error(`Switch wallet to ${BOT_CHAIN.name} (chain ${BOT_CHAIN.chainId}).`);
+      }
       const signer = await provider.getSigner();
       let registryAddress = import.meta.env.VITE_CREDENTIAL_REGISTRY_ADDRESS;
       if (!registryAddress) {
@@ -428,12 +444,15 @@ export default function App() {
       } catch {
         /* keep default */
       }
-      setSuccess("Confirm the 0.5 BOT fee in your wallet…");
+      const label = `${formatEther(fee)} BOT`;
+      setSuccess(`Confirm the ${label} fee in your wallet…`);
       const tx = await registry.payFeeAndRequestVerification({ value: BigInt(fee) });
       setSuccess("Payment submitted. Waiting for confirmation…");
       await tx.wait();
-      await api(`/verifications/fee-status/${account}`).catch(() => null);
-      // Optimistic escrow mirror for memory/demo until indexer catches up
+      await api(`/verifications/fee-status/${account}`, {
+        method: "POST",
+        body: JSON.stringify({ feeTxHash: tx.hash, feeAmount: fee }),
+      }).catch(() => null);
       setFeeStatus({
         holderAddress: account,
         feeAmount: fee,
@@ -441,7 +460,12 @@ export default function App() {
         feeStatus: "ESCROWED",
         escrowed: true,
       });
-      setSuccess("Fee escrowed. Awaiting issuer review.");
+      const scan = explorerTxUrl(tx.hash);
+      setSuccess(
+        scan
+          ? `Fee escrowed. Awaiting issuer review. Tx: ${shortAddr(tx.hash)}`
+          : "Fee escrowed. Awaiting issuer review."
+      );
       await loadFeeStatus(account);
     } catch (err) {
       setError(err?.shortMessage || err.message || "Fee payment failed");
@@ -607,7 +631,8 @@ export default function App() {
           feeStatus={feeStatus}
           feeBusy={feeBusy}
           feeEscrowed={feeEscrowed}
-          verificationFeeLabel={`${formatEther(verificationFee)} BOT`}
+          verificationFeeLabel={feeLabel}
+          explorerTxUrl={explorerTxUrl}
           onRefresh={refreshCredential}
           onRevoke={revokeCredential}
         />

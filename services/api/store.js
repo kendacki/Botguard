@@ -170,12 +170,18 @@ async function upsertFeeStatus({
   blockNumber,
 }) {
   const key = holderAddress.toLowerCase();
+  const prev = useMemory ? db.store.fee_status.get(key) : null;
   const row = {
     holderAddress,
-    feeAmount: feeAmount != null ? String(feeAmount) : null,
-    feeTxHash: feeTxHash || null,
-    feeStatus: feeStatus || null,
-    blockNumber: blockNumber || 0,
+    feeAmount:
+      feeAmount != null
+        ? String(feeAmount)
+        : prev?.feeAmount != null
+          ? String(prev.feeAmount)
+          : null,
+    feeTxHash: feeTxHash || prev?.feeTxHash || null,
+    feeStatus: feeStatus || prev?.feeStatus || null,
+    blockNumber: blockNumber || prev?.blockNumber || 0,
     updatedAt: nowIso(),
   };
 

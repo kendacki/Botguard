@@ -162,6 +162,7 @@ export default function SignedApp({
   feeBusy,
   feeEscrowed,
   verificationFeeLabel,
+  explorerTxUrl,
   onRefresh,
   onRevoke,
 }) {
@@ -449,10 +450,38 @@ export default function SignedApp({
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-mute">Transaction</span>
-                      <span className="font-mono font-medium text-ink">
-                        {verification?.txHash ? shortAddr(verification.txHash) : "—"}
-                      </span>
+                      <span className="text-mute">Issue tx</span>
+                      {verification?.txHash && explorerTxUrl?.(verification.txHash) ? (
+                        <a
+                          className="font-mono font-medium text-brand underline-offset-2 hover:underline"
+                          href={explorerTxUrl(verification.txHash)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {shortAddr(verification.txHash)}
+                        </a>
+                      ) : (
+                        <span className="font-mono font-medium text-ink">
+                          {verification?.txHash ? shortAddr(verification.txHash) : "—"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-mute">Fee tx</span>
+                      {feeStatus?.feeTxHash && explorerTxUrl?.(feeStatus.feeTxHash) ? (
+                        <a
+                          className="font-mono font-medium text-brand underline-offset-2 hover:underline"
+                          href={explorerTxUrl(feeStatus.feeTxHash)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {shortAddr(feeStatus.feeTxHash)}
+                        </a>
+                      ) : (
+                        <span className="font-mono font-medium text-ink">
+                          {feeStatus?.feeTxHash ? shortAddr(feeStatus.feeTxHash) : "—"}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-mute">Fee status</span>

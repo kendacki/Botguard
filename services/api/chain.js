@@ -2,10 +2,23 @@ const fs = require("fs");
 const path = require("path");
 const { ethers } = require("ethers");
 
+const IS_PROD = process.env.NODE_ENV === "production";
+
 function loadDeployment() {
-  const file = path.join(__dirname, "..", "..", "deployments", "localhost.json");
-  if (!fs.existsSync(file)) return null;
-  return JSON.parse(fs.readFileSync(file, "utf8"));
+  const root = path.join(__dirname, "..", "..", "deployments");
+  const candidates = [
+    process.env.DEPLOYMENT_FILE,
+    "botchainTestnet.json",
+    "localhost.json",
+  ].filter(Boolean);
+
+  for (const name of candidates) {
+    const file = path.isAbsolute(name) ? name : path.join(root, name);
+    if (fs.existsSync(file)) {
+      return JSON.parse(fs.readFileSync(file, "utf8"));
+    }
+  }
+  return null;
 }
 
 function getRegistryAddress() {
@@ -18,6 +31,8 @@ function getRegistryAddress() {
 
 const REGISTRY_ABI = [
   "function issueCredential(address holder, bytes32 commitmentHash, uint8 tier, bytes2 jurisdiction, uint64 validityPeriodSeconds)",
+  "function renewCredential(address holder, uint64 additionalSeconds)",
+  "function revokeCredential(address holder, bytes32 reason)",
   "function payFeeAndRequestVerification() payable",
   "function rejectVerification(address holder)",
   "function escrowedFee(address holder) view returns (uint256)",
@@ -29,6 +44,7 @@ const REGISTRY_ABI = [
   "event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury)",
   "event CredentialIssued(address indexed holder, address indexed issuer, uint8 tier, bytes2 jurisdiction, uint64 expiresAt)",
   "event CredentialRevoked(address indexed holder, bytes32 reason, address indexed revokedBy)",
+  "event CredentialRenewed(address indexed holder, uint64 newExpiresAt)",
 ];
 
 function getProvider() {
@@ -44,18 +60,37 @@ function getRegistryRead() {
   return new ethers.Contract(registryAddress, REGISTRY_ABI, provider);
 }
 
+function getIssuerPrivateKey() {
+  if (process.env.ISSUER_PRIVATE_KEY) return process.env.ISSUER_PRIVATE_KEY;
+  // Local Hardhat account #1 — never use against a real RPC in production.
+  if (!IS_PROD && !process.env.CHAIN_RPC_URL && !process.env.BOTCHAIN_TESTNET_RPC) {
+    return "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+  }
+  return null;
+}
+
 function getIssuerWallet() {
   const provider = getProvider();
-  if (!provider) return null;
-  const issuerKey =
-    process.env.ISSUER_PRIVATE_KEY ||
-    "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+  const issuerKey = getIssuerPrivateKey();
+  if (!provider || !issuerKey) return null;
   return new ethers.Wallet(issuerKey, provider);
 }
 
+function assertIssuerReady() {
+  const rpc = process.env.CHAIN_RPC_URL || process.env.BOTCHAIN_TESTNET_RPC;
+  if (!rpc) return { ok: true, mode: "offchain" };
+  if (!getRegistryAddress()) {
+    return { ok: false, error: "CREDENTIAL_REGISTRY_ADDRESS (or deployment file) required when CHAIN_RPC_URL is set" };
+  }
+  if (!getIssuerPrivateKey()) {
+    return { ok: false, error: "ISSUER_PRIVATE_KEY required when CHAIN_RPC_URL is set" };
+  }
+  return { ok: true, mode: "onchain" };
+}
+
 /**
- * Submit issueCredential on-chain using the Hardhat demo issuer key.
- * Returns { txHash, commitmentHash } or null if chain is unavailable.
+ * Submit issueCredential on-chain.
+ * Returns { txHash, commitmentHash } or null if chain/wallet is unavailable.
  */
 async function issueOnChain({ holderAddress, tier, jurisdiction, commitmentHash, validityPeriodSeconds }) {
   const registryAddress = getRegistryAddress();
@@ -77,6 +112,37 @@ async function issueOnChain({ holderAddress, tier, jurisdiction, commitmentHash,
   } catch (err) {
     console.warn("[chain] issueOnChain failed:", err.message);
     return null;
+  }
+}
+
+async function revokeOnChain(holderAddress, reason = "ISSUER_ERROR") {
+  const registryAddress = getRegistryAddress();
+  const wallet = getIssuerWallet();
+  if (!wallet || !registryAddress) return null;
+  try {
+    const registry = new ethers.Contract(registryAddress, REGISTRY_ABI, wallet);
+    const reasonBytes = ethers.id(String(reason || "ISSUER_ERROR"));
+    const tx = await registry.revokeCredential(holderAddress, reasonBytes);
+    const receipt = await tx.wait();
+    return { txHash: receipt.hash };
+  } catch (err) {
+    console.warn("[chain] revokeOnChain failed:", err.message);
+    throw err;
+  }
+}
+
+async function renewOnChain(holderAddress, additionalSeconds) {
+  const registryAddress = getRegistryAddress();
+  const wallet = getIssuerWallet();
+  if (!wallet || !registryAddress) return null;
+  try {
+    const registry = new ethers.Contract(registryAddress, REGISTRY_ABI, wallet);
+    const tx = await registry.renewCredential(holderAddress, Number(additionalSeconds));
+    const receipt = await tx.wait();
+    return { txHash: receipt.hash };
+  } catch (err) {
+    console.warn("[chain] renewOnChain failed:", err.message);
+    throw err;
   }
 }
 
@@ -128,6 +194,8 @@ async function readVerificationFee() {
 
 module.exports = {
   issueOnChain,
+  revokeOnChain,
+  renewOnChain,
   rejectOnChain,
   readEscrowedFee,
   readVerificationFee,
@@ -136,4 +204,6 @@ module.exports = {
   REGISTRY_ABI,
   getProvider,
   getRegistryRead,
+  assertIssuerReady,
+  getIssuerPrivateKey,
 };

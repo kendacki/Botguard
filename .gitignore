@@ -21,3 +21,4 @@ simulation/.venv/
 infra/secrets/*.pem
 .vscode/
 .idea/
+.vercel
