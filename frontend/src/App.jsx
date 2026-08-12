@@ -566,10 +566,10 @@ export default function App() {
                 <img
                   src="/illustrations/hero/hero-person-center.png"
                   alt=""
-                  className="pointer-events-none relative z-10 mb-[-3rem] w-[10rem] select-none drop-shadow-md sm:mb-[-3.5rem] sm:w-[11.5rem]"
+                  className="pointer-events-none relative z-10 mb-[-3rem] w-[10rem] select-none sm:mb-[-3.5rem] sm:w-[11.5rem]"
                   loading="eager"
                 />
-                <div className="w-full rounded-t-[1.35rem] bg-brand px-4 pb-9 pt-14 text-center shadow-[0_-8px_40px_rgba(138,63,252,0.25)] sm:px-5 sm:pt-16">
+                <div className="w-full rounded-t-[1.35rem] bg-brand px-4 pb-9 pt-14 text-center sm:px-5 sm:pt-16">
                   <p className="mx-auto max-w-[12rem] text-lg font-bold leading-snug text-white sm:text-xl">
                     Ready to verify your first wallet.
                   </p>
