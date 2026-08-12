@@ -7,6 +7,7 @@ import {
   LogOut,
   Minus,
   Plus,
+  Star,
   Wallet,
 } from "lucide-react";
 import Logo from "./components/Logo.jsx";
@@ -529,7 +530,7 @@ export default function App() {
                 />
                 <div className="relative overflow-hidden rounded-t-[1.35rem] bg-[#E8DEFF] px-5 pb-8 pt-12 text-center">
                   <p className="text-[2.35rem] font-extrabold leading-none tracking-tight text-[#5B21B6] sm:text-[2.6rem]">
-                    12K+
+                    1K+
                   </p>
                   <div className="mt-3 flex items-center justify-center gap-1.5">
                     <img
@@ -543,11 +544,7 @@ export default function App() {
                       className="h-8 w-8 rounded-full border-2 border-white object-cover"
                     />
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-white">
-                      <img
-                        src="/illustrations/hero/plus.svg"
-                        alt=""
-                        className="h-3.5 w-3.5 brightness-0 invert"
-                      />
+                      <Plus size={14} strokeWidth={2.5} aria-hidden="true" />
                     </span>
                   </div>
                   <p className="mx-auto mt-3 max-w-[11.5rem] text-[11px] font-medium leading-snug text-[#5B21B6]/60">
@@ -576,12 +573,8 @@ export default function App() {
                     whileTap={{ scale: 0.98 }}
                   >
                     <span>Connect to start</span>
-                    <span className="btn-hero-pill-icon">
-                      <img
-                        src="/illustrations/hero/arrow-right.svg"
-                        alt=""
-                        className="h-4 w-4 brightness-0 invert"
-                      />
+                    <span className="btn-hero-pill-icon" aria-hidden="true">
+                      <ArrowRight size={16} strokeWidth={2.5} />
                     </span>
                   </motion.button>
                 </div>
@@ -598,10 +591,10 @@ export default function App() {
                 <div className="relative overflow-hidden rounded-t-[1.35rem] bg-[#E8DEFF] px-5 pb-8 pt-12 text-center">
                   <p className="flex items-center justify-center gap-1.5 text-[2.35rem] font-extrabold leading-none tracking-tight text-[#5B21B6] sm:text-[2.6rem]">
                     4.9
-                    <img
-                      src="/illustrations/hero/star.svg"
-                      alt=""
-                      className="mb-1 h-7 w-7"
+                    <Star
+                      size={28}
+                      className="mb-0.5 fill-brand text-brand"
+                      aria-hidden="true"
                     />
                   </p>
                   <p className="mx-auto mt-4 max-w-[12rem] text-[11px] font-medium leading-snug text-[#5B21B6]/60">
