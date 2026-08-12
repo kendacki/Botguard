@@ -13,6 +13,7 @@ import Logo from "./components/Logo.jsx";
 import Modal from "./components/Modal.jsx";
 import Alert from "./components/Alert.jsx";
 import HeroScene from "./components/HeroScene.jsx";
+import SignedApp from "./pages/SignedApp.jsx";
 import { api, DEMO_API_KEY, shortAddr } from "./lib/api.js";
 
 const easeOut = [0.22, 1, 0.36, 1];
@@ -76,6 +77,10 @@ const faqs = [
     q: "What if a credential expires?",
     a: "Transfers fail until it is renewed. Apps can warn users before that happens.",
   },
+  {
+    q: "What should I do after connecting?",
+    a: "Open Verify, choose your tier and region, then submit. Use Status anytime to refresh the result.",
+  },
 ];
 
 function StatusPill({ ok, label }) {
@@ -104,15 +109,22 @@ export default function App() {
   const [walletSuccess, setWalletSuccess] = useState("");
   const [busy, setBusy] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const [demoOpen, setDemoOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
   const [manualAddress, setManualAddress] = useState("");
   const [chainLabel, setChainLabel] = useState("");
   const [hasInjectedWallet, setHasInjectedWallet] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
+  const [appView, setAppView] = useState("home");
 
   const valid = Boolean(credential?.valid);
   const connected = Boolean(account && /^0x[a-fA-F0-9]{40}$/.test(account));
+
+  const signedNav = [
+    { id: "home", label: "Home" },
+    { id: "status", label: "Status" },
+    { id: "verify", label: "Verify" },
+    { id: "help", label: "Help" },
+  ];
 
   async function loadCredentialFor(address) {
     try {
@@ -131,6 +143,7 @@ export default function App() {
       return;
     }
     await loadCredentialFor(addr);
+    setAppView("home");
     if (opts.closeModal) setWalletOpen(false);
   }
 
@@ -291,6 +304,9 @@ export default function App() {
     setWalletSuccess("");
     setWalletError("");
     setWalletOpen(false);
+    setAppView("home");
+    setError("");
+    setSuccess("");
   }
 
   async function submitVerification() {
@@ -376,16 +392,28 @@ export default function App() {
               : "mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6"
           }
         >
-          <a href="#top" className="inline-flex items-center gap-2.5 justify-self-start">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2.5 justify-self-start"
+            onClick={() => (connected ? setAppView("home") : window.scrollTo({ top: 0, behavior: "smooth" }))}
+          >
             <Logo className="h-8 w-8" />
             <span className="text-[15px] font-bold tracking-tight">BOTGUARD</span>
-          </a>
+          </button>
           {connected ? (
-            <nav className="hidden items-center justify-center gap-8 text-sm font-medium text-mute md:flex">
-              <a href="#product" className="transition hover:text-ink">Product</a>
-              <a href="#catalog" className="transition hover:text-ink">Catalog</a>
-              <a href="#flow" className="transition hover:text-ink">Flow</a>
-              <a href="#faq" className="transition hover:text-ink">FAQs</a>
+            <nav className="hidden items-center justify-center gap-1 text-sm font-medium md:flex">
+              {signedNav.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setAppView(item.id)}
+                  className={`rounded-full px-3.5 py-1.5 transition ${
+                    appView === item.id ? "bg-brand/10 text-brand" : "text-mute hover:text-ink"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
             </nav>
           ) : null}
           <button type="button" className="btn-primary justify-self-end" onClick={openWalletModal}>
@@ -393,8 +421,50 @@ export default function App() {
             {connected ? shortAddr(account) : "Connect"}
           </button>
         </div>
+        {connected ? (
+          <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-3 md:hidden">
+            {signedNav.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setAppView(item.id)}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                  appView === item.id ? "bg-brand/10 text-brand" : "text-mute"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </header>
 
+      {connected ? (
+        <SignedApp
+          view={appView}
+          setView={setAppView}
+          account={account}
+          chainLabel={chainLabel}
+          credential={credential}
+          valid={valid}
+          tier={tier}
+          setTier={setTier}
+          jurisdiction={jurisdiction}
+          setJurisdiction={setJurisdiction}
+          verification={verification}
+          verificationId={verificationId}
+          busy={busy}
+          error={error}
+          success={success}
+          openFaq={openFaq}
+          setOpenFaq={setOpenFaq}
+          faqs={faqs}
+          onVerify={submitVerification}
+          onRefresh={refreshCredential}
+          onRevoke={revokeCredential}
+        />
+      ) : (
+      <>
       <main id="top">
         <section className="relative overflow-hidden">
           <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center px-4 pb-8 pt-16 text-center md:px-6 md:pb-10 md:pt-24">
@@ -425,11 +495,11 @@ export default function App() {
                 <motion.button
                   type="button"
                   className="btn-hero"
-                  onClick={() => setDemoOpen(true)}
+                  onClick={openWalletModal}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  Launch demo
+                  Connect to start
                   <ArrowRight size={16} />
                 </motion.button>
               </motion.div>
@@ -496,10 +566,10 @@ export default function App() {
                 <div className="min-w-0">
                   <p className="text-xs text-mute">Wallet</p>
                   <p className="mt-0.5 truncate text-sm font-semibold text-ink">
-                    {connected ? shortAddr(account) : "Not connected"}
+                    Not connected
                   </p>
                 </div>
-                <StatusPill ok={valid} label={valid ? "Valid" : "No credential"} />
+                <StatusPill ok={false} label="No credential" />
               </div>
 
               <div className="mt-5 grid grid-cols-3 gap-2 text-center">
@@ -520,9 +590,9 @@ export default function App() {
               <button
                 type="button"
                 className="btn-primary mt-5 w-full"
-                onClick={() => (connected ? setDemoOpen(true) : openWalletModal())}
+                onClick={openWalletModal}
               >
-                {connected ? "Run verification" : "Connect wallet"}
+                Connect wallet
                 <ArrowRight size={16} />
               </button>
             </div>
@@ -698,11 +768,11 @@ export default function App() {
               <div>
                 <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Ready to try it?</h2>
                 <p className="mt-1.5 max-w-md text-sm text-mute md:text-base">
-                  Open the demo and issue a credential in a few clicks.
+                  Connect your wallet and issue a credential in a few clicks.
                 </p>
               </div>
-              <button type="button" className="btn-primary shrink-0" onClick={() => setDemoOpen(true)}>
-                Open demo
+              <button type="button" className="btn-primary shrink-0" onClick={openWalletModal}>
+                Connect wallet
                 <ArrowRight size={16} />
               </button>
             </div>
@@ -740,10 +810,10 @@ export default function App() {
                   <li>
                     <button
                       type="button"
-                      onClick={() => setDemoOpen(true)}
+                      onClick={openWalletModal}
                       className="text-sm text-neutral-500 transition-colors hover:text-ink"
                     >
-                      Demo
+                      Connect
                     </button>
                   </li>
                 </ul>
@@ -791,6 +861,8 @@ export default function App() {
           </span>
         </div>
       </footer>
+      </>
+      )}
 
       {/* Wallet modal */}
       <Modal
@@ -803,18 +875,20 @@ export default function App() {
         title={connected ? "Wallet" : "Connect"}
       >
         <p className="text-sm text-mute">
-          {hasInjectedWallet
-            ? "Connect with your browser wallet, or paste an address for read-only use."
-            : "No browser wallet detected. Paste an address, or install MetaMask."}
+          {connected
+            ? "Manage this session. Switching accounts refreshes credential status."
+            : hasInjectedWallet
+              ? "Connect your browser wallet to open Home, Status, Verify, and Help."
+              : "No browser wallet found. Paste an address for read-only access, or install MetaMask."}
         </p>
 
         {connected ? (
           <div className="mt-4 space-y-3">
-            <div className="glass p-3 text-sm">
+            <div className="rounded-2xl bg-[#faf9fc] p-4 text-sm">
               <div className="flex items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-mute">Connected</p>
-                  <p className="mt-1 font-medium text-ink break-all">{account}</p>
+                  <p className="mt-1 break-all font-medium text-ink">{account}</p>
                 </div>
                 <StatusPill ok label={chainLabel || "Ready"} />
               </div>
@@ -877,71 +951,6 @@ export default function App() {
 
         <Alert type="error">{walletError}</Alert>
         <Alert type="success">{walletSuccess}</Alert>
-      </Modal>
-
-      {/* Demo modal */}
-      <Modal open={demoOpen} onClose={() => { setDemoOpen(false); setError(""); setSuccess(""); }} title="Verification demo">
-        <div className="space-y-3">
-          <label className="block text-xs font-medium text-mute">
-            Holder address
-            <input
-              className="field mt-1.5"
-              value={account}
-              onChange={(e) => setAccount(e.target.value)}
-              placeholder="0x… or connect wallet"
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-xs font-medium text-mute">
-              Tier
-              <select className="field mt-1.5" value={tier} onChange={(e) => setTier(e.target.value)}>
-                <option value="RETAIL">Retail</option>
-                <option value="ACCREDITED">Accredited</option>
-                <option value="INSTITUTIONAL">Institutional</option>
-              </select>
-            </label>
-            <label className="block text-xs font-medium text-mute">
-              Region
-              <select className="field mt-1.5" value={jurisdiction} onChange={(e) => setJurisdiction(e.target.value)}>
-                <option value="NG">NG</option>
-                <option value="US">US</option>
-                <option value="GB">GB</option>
-                <option value="EU">EU</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="glass p-3 text-sm">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-mute">Status</span>
-              <StatusPill ok={valid} label={valid ? "Valid" : verification?.status || "Idle"} />
-            </div>
-            <div className="space-y-1 text-xs text-mute">
-              <div className="flex justify-between"><span>Request</span><span className="text-ink">{verificationId ? shortAddr(verificationId) : "—"}</span></div>
-              <div className="flex justify-between"><span>Tx</span><span className="text-ink">{verification?.txHash ? shortAddr(verification.txHash) : "—"}</span></div>
-              <div className="flex justify-between"><span>Tier</span><span className="text-ink">{credential?.tier || "—"}</span></div>
-            </div>
-          </div>
-
-          <Alert type="error">{error}</Alert>
-          <Alert type="success">{success}</Alert>
-
-          <div className="flex flex-wrap gap-2 pt-1">
-            <button type="button" className="btn-primary" disabled={busy} onClick={submitVerification}>
-              {busy ? "Working…" : "Submit verification"}
-            </button>
-            <button type="button" className="btn-ghost" onClick={refreshCredential}>
-              Check status
-            </button>
-            <button type="button" className="btn-muted" disabled={busy || !valid} onClick={revokeCredential}>
-              Revoke
-            </button>
-            <button type="button" className="btn-ghost" onClick={openWalletModal}>
-              <Wallet size={16} />
-              Wallet
-            </button>
-          </div>
-        </div>
       </Modal>
     </div>
   );
