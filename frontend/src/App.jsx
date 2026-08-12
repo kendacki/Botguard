@@ -465,7 +465,7 @@ export default function App() {
       ) : (
       <>
       <main id="top">
-        <section className="relative min-h-[min(92vh,820px)] overflow-hidden">
+        <section className="relative min-h-[min(92vh,860px)] overflow-hidden">
           <div className="absolute inset-0">
             <video
               className="h-full w-full object-cover"
@@ -488,9 +488,9 @@ export default function App() {
             />
           </div>
 
-          <div className="relative mx-auto flex min-h-[min(92vh,820px)] w-full max-w-4xl flex-col items-center justify-center px-4 pb-16 pt-20 text-center md:px-6 md:pb-20 md:pt-24">
+          <div className="relative mx-auto flex min-h-[min(92vh,860px)] w-full max-w-5xl flex-col px-4 pt-20 md:px-6 md:pt-24">
             <motion.div
-              className="flex w-full flex-col items-center"
+              className="flex flex-1 flex-col items-center justify-center pb-6 text-center md:pb-10"
               variants={heroContainer}
               initial="hidden"
               animate="show"
@@ -511,18 +511,103 @@ export default function App() {
                 Check a wallet once on BOT Chain. Gate every transfer after that,
                 without putting personal data on chain.
               </motion.p>
+            </motion.div>
 
-              <motion.div variants={heroItem} className="mt-8">
-                <motion.button
-                  type="button"
-                  className="btn-hero"
-                  onClick={openWalletModal}
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Connect to start
-                  <ArrowRight size={16} />
-                </motion.button>
+            <motion.div
+              className="grid grid-cols-1 items-end gap-3 sm:grid-cols-3 sm:gap-4"
+              initial="hidden"
+              animate="show"
+              variants={heroContainer}
+            >
+              {/* Left proof */}
+              <motion.div variants={heroItem} className="relative pt-28">
+                <img
+                  src="/illustrations/hero/hero-person-left.png"
+                  alt=""
+                  className="pointer-events-none absolute bottom-[calc(100%-3.25rem)] left-1/2 z-10 w-[9.5rem] -translate-x-1/2 select-none drop-shadow-sm sm:w-[10.5rem]"
+                  loading="eager"
+                />
+                <div className="relative overflow-hidden rounded-t-[1.35rem] bg-[#E8DEFF] px-5 pb-8 pt-12 text-center">
+                  <p className="text-[2.35rem] font-extrabold leading-none tracking-tight text-[#5B21B6] sm:text-[2.6rem]">
+                    12K+
+                  </p>
+                  <div className="mt-3 flex items-center justify-center gap-1.5">
+                    <img
+                      src="/illustrations/hero/avatar-1.png"
+                      alt=""
+                      className="h-8 w-8 rounded-full border-2 border-white object-cover"
+                    />
+                    <img
+                      src="/illustrations/hero/avatar-2.png"
+                      alt=""
+                      className="h-8 w-8 rounded-full border-2 border-white object-cover"
+                    />
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-white">
+                      <img
+                        src="/illustrations/hero/plus.svg"
+                        alt=""
+                        className="h-3.5 w-3.5 brightness-0 invert"
+                      />
+                    </span>
+                  </div>
+                  <p className="mx-auto mt-3 max-w-[11.5rem] text-[11px] font-medium leading-snug text-[#5B21B6]/60">
+                    Verified wallets and teams shipping gated RWAs.
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Center CTA */}
+              <motion.div variants={heroItem} className="relative z-[1] pt-32 sm:-mb-1">
+                <img
+                  src="/illustrations/hero/hero-person-center.png"
+                  alt=""
+                  className="pointer-events-none absolute bottom-[calc(100%-3.5rem)] left-1/2 z-10 w-[11rem] -translate-x-1/2 select-none drop-shadow-md sm:w-[12.5rem]"
+                  loading="eager"
+                />
+                <div className="relative overflow-hidden rounded-t-[1.35rem] bg-brand px-5 pb-10 pt-14 text-center shadow-[0_-8px_40px_rgba(138,63,252,0.25)]">
+                  <p className="mx-auto max-w-[12rem] text-lg font-bold leading-snug text-white sm:text-xl">
+                    Ready to verify your first wallet.
+                  </p>
+                  <motion.button
+                    type="button"
+                    className="btn-hero-pill mx-auto mt-5"
+                    onClick={openWalletModal}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <span>Connect to start</span>
+                    <span className="btn-hero-pill-icon">
+                      <img
+                        src="/illustrations/hero/arrow-right.svg"
+                        alt=""
+                        className="h-4 w-4 brightness-0 invert"
+                      />
+                    </span>
+                  </motion.button>
+                </div>
+              </motion.div>
+
+              {/* Right rating */}
+              <motion.div variants={heroItem} className="relative pt-28">
+                <img
+                  src="/illustrations/hero/hero-person-right.png"
+                  alt=""
+                  className="pointer-events-none absolute bottom-[calc(100%-3.25rem)] left-1/2 z-10 w-[9.5rem] -translate-x-1/2 select-none drop-shadow-sm sm:w-[10.5rem]"
+                  loading="eager"
+                />
+                <div className="relative overflow-hidden rounded-t-[1.35rem] bg-[#E8DEFF] px-5 pb-8 pt-12 text-center">
+                  <p className="flex items-center justify-center gap-1.5 text-[2.35rem] font-extrabold leading-none tracking-tight text-[#5B21B6] sm:text-[2.6rem]">
+                    4.9
+                    <img
+                      src="/illustrations/hero/star.svg"
+                      alt=""
+                      className="mb-1 h-7 w-7"
+                    />
+                  </p>
+                  <p className="mx-auto mt-4 max-w-[12rem] text-[11px] font-medium leading-snug text-[#5B21B6]/60">
+                    Based on builder feedback across BOT Chain pilots.
+                  </p>
+                </div>
               </motion.div>
             </motion.div>
           </div>
