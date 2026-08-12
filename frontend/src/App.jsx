@@ -404,7 +404,7 @@ export default function App() {
 
       <main id="top">
         <section className="relative overflow-hidden">
-          <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center px-4 pb-10 pt-16 text-center md:px-6 md:pb-14 md:pt-24">
+          <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center px-4 pb-8 pt-16 text-center md:px-6 md:pb-10 md:pt-24">
             <motion.div
               className="flex w-full flex-col items-center"
               variants={heroContainer}
@@ -441,16 +441,19 @@ export default function App() {
                 </motion.button>
               </motion.div>
             </motion.div>
-
-            <motion.div
-              className="mt-12 w-full md:mt-16"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35, duration: 0.7, ease: easeOut }}
-            >
-              <HeroScene />
-            </motion.div>
           </div>
+
+          <motion.div
+            className="relative mx-auto h-[min(48vw,260px)] w-full max-w-5xl overflow-hidden sm:h-[300px] md:h-[360px]"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.8, ease: easeOut }}
+            aria-hidden="true"
+          >
+            <div className="absolute left-1/2 top-0 w-[min(135vw,820px)] -translate-x-1/2">
+              <HeroScene />
+            </div>
+          </motion.div>
         </section>
 
         {/* Product */}

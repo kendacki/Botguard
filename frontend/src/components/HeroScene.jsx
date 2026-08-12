@@ -40,10 +40,10 @@ const map = Object.fromEntries(nodes.map((n) => [n.id, n]));
 export default function HeroScene() {
   return (
     <motion.div
-      className="relative mx-auto aspect-square w-full max-w-[380px] md:max-w-[420px]"
-      initial={{ opacity: 0, scale: 0.92 }}
+      className="relative mx-auto aspect-square w-full"
+      initial={{ opacity: 0, scale: 0.94 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
       aria-hidden="true"
     >
       <div
