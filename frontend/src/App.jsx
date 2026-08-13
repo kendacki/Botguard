@@ -1189,7 +1189,7 @@ export default function App() {
           <div className="space-y-3">
             <p className="text-xs leading-relaxed text-mute">
               {hasInjectedWallet
-                ? "Connect your browser wallet to open Home, Status, Verify, and Help."
+                ? "Connect your browser wallet"
                 : "No browser wallet found. Paste an address for read-only access, or install MetaMask."}
             </p>
             <button
