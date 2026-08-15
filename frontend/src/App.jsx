@@ -247,10 +247,10 @@ export default function App() {
         setVerification(status);
         if (status.status === "CONFIRMED" || status.status === "FAILED") {
           if (status.status === "FAILED") {
-            setError(status.failureReason || "Credential issue failed.");
+            setError(status.failureReason || "We couldn't finish minting. Try again.");
             setSuccess("");
           } else {
-            setSuccess("Credential issued on BOT Chain.");
+            setSuccess("Your pass is live.");
             setError("");
           }
           try {
@@ -352,7 +352,7 @@ export default function App() {
     setError("");
     setSuccess("");
     if (!account) {
-      setError("Add a holder address or connect a wallet.");
+      setError("Connect a wallet to continue.");
       return;
     }
     if (!/^0x[a-fA-F0-9]{40}$/.test(account)) {
@@ -360,7 +360,7 @@ export default function App() {
       return;
     }
     if (!skipFeeCheck && !feeEscrowed) {
-      setError(`Pay the ${feeLabel} verification fee first.`);
+      setError(`Pay ${feeLabel} first — it comes from this wallet.`);
       return;
     }
     setBusy(true);
@@ -381,7 +381,7 @@ export default function App() {
       });
       setVerificationId(accepted.requestId);
       setVerification(accepted);
-      setSuccess("Issuing your credential on BOT Chain…");
+      setSuccess("Minting your pass…");
       await loadFeeStatus(account);
     } catch (err) {
       setError(err.message);
@@ -398,7 +398,7 @@ export default function App() {
     setError("");
     setSuccess("");
     if (!window.ethereum) {
-      setError("Connect an injected wallet to pay the fee on chain.");
+      setError("Connect a wallet, then approve the fee.");
       return;
     }
     if (!account) {
@@ -445,9 +445,9 @@ export default function App() {
         /* keep default */
       }
       const label = `${formatEther(fee)} BOT`;
-      setSuccess(`Confirm the ${label} fee in your wallet…`);
+      setSuccess(`Approve ${label} in your wallet`);
       const tx = await registry.payFeeAndRequestVerification({ value: BigInt(fee) });
-      setSuccess("Payment submitted. Waiting for confirmation…");
+      setSuccess("Waiting for the network…");
       await tx.wait();
       await api(`/verifications/fee-status/${account}`, {
         method: "POST",
@@ -460,7 +460,7 @@ export default function App() {
         feeStatus: "ESCROWED",
         escrowed: true,
       });
-      setSuccess("Fee confirmed. Issuing your credential…");
+      setSuccess("Paid. Minting your pass…");
       await loadFeeStatus(account);
       await issueCredential({ skipFeeCheck: true });
     } catch (err) {
@@ -483,8 +483,8 @@ export default function App() {
       });
       setSuccess(
         result.txHash
-          ? `Rejected. Refund confirming (${shortAddr(result.txHash)}).`
-          : "Rejected. Fee refunded to holder."
+          ? `Refund started (${shortAddr(result.txHash)}).`
+          : "Fee is on its way back to this wallet."
       );
       await loadFeeStatus(account);
     } catch (err) {
@@ -498,7 +498,7 @@ export default function App() {
     setError("");
     setSuccess("");
     if (!account) {
-      setError("Add a holder address first.");
+      setError("Connect a wallet first.");
       return;
     }
     try {
@@ -506,19 +506,19 @@ export default function App() {
       try {
         const cred = await api(`/credentials/${account}`);
         setCredential(cred);
-        setSuccess("Status refreshed.");
+        setSuccess("You’re up to date.");
         return;
       } catch (err) {
         setCredential(null);
         const escrowedNow =
           fee?.feeStatus === "ESCROWED" || fee?.escrowed === true || feeEscrowed;
         if (escrowedNow) {
-          setSuccess("Fee is on record. Issuing your credential…");
+          setSuccess("Fee is in. Minting your pass…");
           await issueCredential({ skipFeeCheck: true });
           return;
         }
         if (/No credential/i.test(err.message)) {
-          setSuccess("No credential yet. Pay the verification fee to issue one.");
+          setSuccess("No pass yet. Get verified to mint one.");
           return;
         }
         throw err;
@@ -541,7 +541,7 @@ export default function App() {
         body: JSON.stringify({ reason: "USER_REQUEST" }),
       });
       await refreshCredential();
-      setSuccess("Credential revoked.");
+      setSuccess("Pass removed.");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -1158,7 +1158,7 @@ export default function App() {
           <div className="space-y-3">
             <p className="text-xs leading-relaxed text-mute">
               {hasInjectedWallet
-                ? "Connect your browser wallet"
+                ? "Use the wallet in this browser to continue."
                 : "No browser wallet found. Paste an address for read-only access, or install MetaMask."}
             </p>
             <button

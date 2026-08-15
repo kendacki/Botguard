@@ -1,11 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
-  <defs>
-    <linearGradient id="dashStatusG" x1="20" y1="24" x2="136" y2="136" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#8A3FFC"/>
-      <stop offset="1" stop-color="#6D28D9"/>
-    </linearGradient>
-  </defs>
-  <circle cx="80" cy="80" r="54" fill="url(#dashStatusG)" opacity="0.12"/>
-  <path d="M80 30l38 14v30c0 26-16 44-38 52-22-8-38-26-38-52V44L80 30Z" fill="url(#dashStatusG)"/>
-  <path d="M62 80l12 12 24-28" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="20" y="24" width="120" height="112" rx="26" fill="#8A3FFC" opacity="0.1"/>
+  <rect x="36" y="40" width="88" height="18" rx="9" fill="#8A3FFC" opacity="0.2"/>
+  <rect x="36" y="68" width="64" height="14" rx="7" fill="#8A3FFC" opacity="0.16"/>
+  <rect x="36" y="90" width="76" height="14" rx="7" fill="#8A3FFC" opacity="0.12"/>
+  <circle cx="116" cy="47" r="8" fill="#8A3FFC"/>
+  <path d="M112.5 47.2l3 3 6-7" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
 </svg>

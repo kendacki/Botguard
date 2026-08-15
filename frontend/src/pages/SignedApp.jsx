@@ -19,8 +19,37 @@ import {
 } from "lucide-react";
 import Alert from "../components/Alert.jsx";
 import Modal from "../components/Modal.jsx";
+import { ArtIdle, ArtLive } from "../components/DashArt.jsx";
 import { shortAddr } from "../lib/api.js";
 import { explorerAddressUrl } from "../lib/chain.js";
+
+const helpItems = [
+  {
+    q: "What am I verifying?",
+    a: "This wallet — not you as a person. Apps only need to know the wallet is cleared, at which tier, and for which region.",
+  },
+  {
+    q: "Does anything personal go on chain?",
+    a: "No. We store a hash, your tier, region, and expiry. ID documents never leave the issuer.",
+  },
+  {
+    q: "Why is there a fee?",
+    a: "The 0.5 BOT fee is escrowed from this wallet so the request is real. If review is declined, it comes back.",
+  },
+  {
+    q: "What is the NFT for?",
+    a: "A unique, non-transferable badge on this address. It shows the kind of check you completed — Retail, Accredited, or Institutional.",
+  },
+  {
+    q: "When do I need to come back?",
+    a: "If the pass expires, or if you want a different tier or region. Refresh anytime to see what's live.",
+  },
+];
+
+function prettyTier(value) {
+  const key = String(value || "").toUpperCase();
+  return { RETAIL: "Retail", ACCREDITED: "Accredited", INSTITUTIONAL: "Institutional" }[key] || value || null;
+}
 
 function decodePassMeta(tokenURI) {
   if (!tokenURI || !tokenURI.startsWith("data:application/json;base64,")) return null;
@@ -43,13 +72,13 @@ function formatExpiry(iso) {
 }
 
 function passLabel({ valid, verification, feeEscrowed }) {
-  if (valid) return "Cleared";
-  if (verification?.status === "FAILED") return "Issue failed";
+  if (valid) return "Ready";
+  if (verification?.status === "FAILED") return "Try again";
   if (["PENDING", "IN_REVIEW", "SIGNED", "SUBMITTED"].includes(verification?.status)) {
-    return "Issuing";
+    return "Minting";
   }
-  if (feeEscrowed) return "Fee paid";
-  return "Unverified";
+  if (feeEscrowed) return "Paid";
+  return "Get started";
 }
 
 function StatusPill({ ok, label, live = false }) {
@@ -116,9 +145,10 @@ function NftPassCard({ nft }) {
         <span className="glass-icon h-14 w-14 shrink-0 text-sm font-bold">BGV</span>
       )}
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-white/70">Soulbound NFT</p>
+        <p className="text-[11px] font-medium uppercase tracking-wide text-white/70">Your badge</p>
         <p className="mt-0.5 truncate text-sm font-semibold text-white">
-          {nft.tier || "Pass"} · {nft.jurisdiction || "—"}
+          {prettyTier(nft.tier) || "Pass"}
+          {nft.jurisdiction ? ` · ${nft.jurisdiction}` : ""}
         </p>
       </div>
       {href ? (
@@ -216,12 +246,19 @@ export default function SignedApp({
           transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
           className="space-y-5"
         >
-          <div className="flex items-end justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand">Your pass</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand">
+                {valid ? "Ready" : "Your pass"}
+              </p>
               <h1 className="mt-1.5 text-[1.65rem] font-semibold tracking-tight text-ink sm:text-3xl">
-                {valid ? "Cleared for gated apps." : "One check. Then you move."}
+                {valid ? "You're cleared." : "Verify once. Use it everywhere."}
               </h1>
+              <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-mute">
+                {valid
+                  ? "Apps can reuse this answer. Nothing personal is on chain."
+                  : "One wallet tap. Your pass and badge land on BOT Chain."}
+              </p>
             </div>
             <StatusPill ok={valid} live={issuing || feeBusy} label={label} />
           </div>
@@ -248,8 +285,10 @@ export default function SignedApp({
               >
                 {valid && nftMeta?.image ? (
                   <img src={nftMeta.image} alt="" className="h-full w-full object-cover" />
+                ) : valid ? (
+                  <ArtLive className="h-[88px] w-[88px]" />
                 ) : (
-                  <ShieldCheck size={44} strokeWidth={1.6} className={valid ? "text-white" : "text-brand"} />
+                  <ArtIdle className="h-[108px] w-[108px]" />
                 )}
               </div>
 
@@ -257,10 +296,12 @@ export default function SignedApp({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className={`text-[11px] font-medium uppercase tracking-wide ${valid ? "text-white/70" : "text-mute"}`}>
-                      {valid ? "On-chain credential" : "Waiting for verification"}
+                      {valid ? "Shared across BOT Chain" : "This wallet"}
                     </p>
                     <p className={`mt-1 text-xl font-semibold tracking-tight ${valid ? "text-white" : "text-ink"}`}>
-                      {valid ? `${credential?.tier || "Retail"} · ${credential?.jurisdiction || "—"}` : "No pass yet"}
+                      {valid
+                        ? `${prettyTier(credential?.tier) || "Retail"}${credential?.jurisdiction ? ` · ${credential.jurisdiction}` : ""}`
+                        : "Not verified yet"}
                     </p>
                   </div>
                 </div>
@@ -285,14 +326,16 @@ export default function SignedApp({
                     </p>
                   </div>
                   <div>
-                    <p className="font-medium opacity-80">Expires</p>
+                    <p className="font-medium opacity-80">Valid until</p>
                     <p className={`mt-0.5 truncate text-sm font-semibold ${valid ? "text-white" : "text-ink"}`}>
                       {formatExpiry(credential?.expiresAt)}
                     </p>
                   </div>
                   <div>
-                    <p className="font-medium opacity-80">Privacy</p>
-                    <p className={`mt-0.5 truncate text-sm font-semibold ${valid ? "text-white" : "text-ink"}`}>Hash only</p>
+                    <p className="font-medium opacity-80">Identity</p>
+                    <p className={`mt-0.5 truncate text-sm font-semibold ${valid ? "text-white" : "text-ink"}`}>
+                      Stays off-chain
+                    </p>
                   </div>
                 </div>
 
@@ -309,9 +352,14 @@ export default function SignedApp({
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.99 }}
                 >
-                  {valid ? "Manage pass" : `Verify · ${verificationFeeLabel || "0.5 BOT"}`}
+                  {valid ? "See your pass" : "Get verified"}
                   <ArrowRight size={16} />
                 </motion.button>
+                {!valid ? (
+                  <p className="mt-2 text-center text-[11px] text-mute">
+                    Fee is {verificationFeeLabel || "0.5 BOT"} · paid from this wallet
+                  </p>
+                ) : null}
               </div>
             </div>
           </motion.section>
@@ -323,7 +371,7 @@ export default function SignedApp({
               </span>
               <div className="min-w-0">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-mute">Tier</p>
-                <p className="truncate text-sm font-semibold text-ink">{credential?.tier || "—"}</p>
+                <p className="truncate text-sm font-semibold text-ink">{prettyTier(credential?.tier) || "—"}</p>
               </div>
             </div>
             <div className="dash-chip">
@@ -340,8 +388,8 @@ export default function SignedApp({
                 <Lock size={14} />
               </span>
               <div className="min-w-0">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-mute">On chain</p>
-                <p className="truncate text-sm font-semibold text-ink">No PII</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-mute">Personal data</p>
+                <p className="truncate text-sm font-semibold text-ink">Off-chain</p>
               </div>
             </div>
             <div className="dash-chip">
@@ -349,16 +397,16 @@ export default function SignedApp({
                 <Sparkles size={14} />
               </span>
               <div className="min-w-0">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-mute">NFT</p>
-                <p className="truncate text-sm font-semibold text-ink">{credential?.nft ? "Issued" : "Pending"}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-mute">Badge</p>
+                <p className="truncate text-sm font-semibold text-ink">{credential?.nft ? "Minted" : "Not yet"}</p>
               </div>
             </div>
           </div>
 
           <div className="flex gap-2.5">
-            <QuickAction icon={valid ? CheckCircle2 : ShieldCheck} label={valid ? "Pass" : "Verify"} onClick={() => setView("verify")} />
-            <QuickAction icon={FileSearch} label="Status" onClick={() => setView("status")} />
-            <QuickAction icon={RefreshCw} label="Refresh" onClick={onRefresh} />
+            <QuickAction icon={valid ? CheckCircle2 : ShieldCheck} label={valid ? "Pass" : "Get pass"} onClick={() => setView("verify")} />
+            <QuickAction icon={FileSearch} label="Details" onClick={() => setView("status")} />
+            <QuickAction icon={RefreshCw} label="Sync" onClick={onRefresh} />
             <QuickAction icon={HelpCircle} label="Help" onClick={() => setView("help")} />
           </div>
         </motion.div>
@@ -367,14 +415,14 @@ export default function SignedApp({
       <Modal
         open={view === "verify"}
         onClose={closeSheet}
-        title={valid ? "Your pass" : "Verify this wallet"}
+        title={valid ? "Your pass" : "Get verified"}
         size="lg"
       >
         <div className="space-y-3.5">
           <div className="flex gap-2 rounded-xl bg-[#faf9fc] px-3 py-2.5">
-            <FlowStep n={1} title="Choose" done={feeEscrowed || valid} current={!feeEscrowed && !valid} />
+            <FlowStep n={1} title="Type" done={feeEscrowed || valid} current={!feeEscrowed && !valid} />
             <FlowStep n={2} title="Pay" done={feeEscrowed || valid} current={feeBusy} />
-            <FlowStep n={3} title="Live" done={valid} current={issuing || feeEscrowed} />
+            <FlowStep n={3} title="Done" done={valid} current={issuing || feeEscrowed} />
           </div>
 
           <div className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-[#faf9fc] px-3.5 py-3">
@@ -382,7 +430,7 @@ export default function SignedApp({
               <Wallet size={16} />
             </span>
             <div className="min-w-0">
-              <p className="text-[11px] font-medium text-mute">Holder</p>
+              <p className="text-[11px] font-medium text-mute">This wallet</p>
               <p className="mt-0.5 break-all font-mono text-xs font-semibold leading-relaxed text-ink">{account}</p>
             </div>
           </div>
@@ -424,7 +472,7 @@ export default function SignedApp({
           <div className="rounded-xl border border-neutral-100 px-3.5 py-3">
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-semibold text-ink">
-                {valid ? "Pass issued" : `Pay ${verificationFeeLabel || "0.5 BOT"}`}
+                {valid ? "Pass is live" : `${verificationFeeLabel || "0.5 BOT"} to start`}
               </p>
               <StatusPill
                 ok={valid || feeEscrowed || feeStatus?.feeStatus === "SETTLED"}
@@ -432,14 +480,18 @@ export default function SignedApp({
                 label={
                   feeBusy
                     ? "Confirming…"
-                    : feeStatus?.feeStatus || (feeEscrowed ? "ESCROWED" : valid ? "SETTLED" : "Unpaid")
+                    : feeEscrowed
+                      ? "Paid"
+                      : valid
+                        ? "Complete"
+                        : "Unpaid"
                 }
               />
             </div>
             <p className="mt-1 text-[11px] leading-relaxed text-mute">
               {valid
-                ? "This wallet can now be gated across BOT Chain apps. A unique soulbound NFT records the verification kind."
-                : "Confirm in your wallet. We issue the hashed pass and a unique NFT as soon as the fee lands."}
+                ? "Gated apps can use this wallet now. Your badge is unique to this address and cannot be transferred."
+                : "Approve the fee in your wallet. We mint the pass and badge as soon as it confirms — no ID documents posted."}
             </p>
           </div>
 
@@ -503,7 +555,7 @@ export default function SignedApp({
                 Done
               </button>
               <button type="button" className="btn-muted h-10 w-full text-xs" disabled={busy} onClick={onRevoke}>
-                Revoke credential
+                Remove this pass
               </button>
             </div>
           ) : (
@@ -517,21 +569,21 @@ export default function SignedApp({
                 whileTap={{ scale: 0.99 }}
               >
                 {feeBusy
-                  ? "Confirm in wallet…"
-                  : issuing
-                    ? "Issuing pass…"
-                    : feeEscrowed
-                      ? "Fee paid — issuing…"
-                      : `Pay ${verificationFeeLabel || "0.5 BOT"}`}
+                    ? "Waiting on wallet…"
+                    : issuing
+                      ? "Minting your pass…"
+                      : feeEscrowed
+                        ? "Paid — finishing up…"
+                        : `Approve ${verificationFeeLabel || "0.5 BOT"}`}
               </motion.button>
               {feeEscrowed ? (
                 <button type="button" className="btn-ghost h-10 w-full text-xs" disabled={busy || feeBusy} onClick={onVerify}>
-                  Retry issue
+                  Try again
                 </button>
               ) : null}
               {feeEscrowed && !valid ? (
                 <button type="button" className="btn-muted h-10 w-full text-xs" disabled={busy || feeBusy} onClick={onReject}>
-                  Cancel & refund
+                  Get a refund
                 </button>
               ) : null}
             </div>
@@ -539,7 +591,7 @@ export default function SignedApp({
         </div>
       </Modal>
 
-      <Modal open={view === "status"} onClose={closeSheet} title="Wallet status" size="lg">
+      <Modal open={view === "status"} onClose={closeSheet} title="What's on record" size="lg">
         <div className="space-y-3.5">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -550,7 +602,7 @@ export default function SignedApp({
           </div>
 
           <div className="grid gap-2.5 sm:grid-cols-2">
-            <StatusRow icon={Layers3} label="Tier" value={credential?.tier} />
+            <StatusRow icon={Layers3} label="Tier" value={prettyTier(credential?.tier)} />
             <StatusRow icon={Globe2} label="Region" value={credential?.jurisdiction} />
             <StatusRow icon={RefreshCw} label="Request" value={verification?.status || "Ready"} />
             <StatusRow icon={ShieldCheck} label="Expires" value={formatExpiry(credential?.expiresAt)} />
@@ -562,10 +614,10 @@ export default function SignedApp({
           {!valid && !credential ? (
             <p className="text-sm leading-relaxed text-mute">
               {verification?.status === "FAILED"
-                ? verification.failureReason || "Issue failed. Open verify to retry."
+                ? verification.failureReason || "That didn't go through. Get verified again to retry."
                 : feeEscrowed
-                  ? "Fee is paid. The pass should appear after the issue transaction confirms."
-                  : "No on-chain pass yet. Verify from the popup — we issue automatically after payment."}
+                  ? "Fee is in. Your pass appears as soon as minting confirms."
+                  : "Nothing on this wallet yet. Get verified — it takes one approval."}
             </p>
           ) : null}
 
@@ -582,18 +634,18 @@ export default function SignedApp({
               whileTap={{ scale: 0.99 }}
             >
               <RefreshCw size={15} className={busy ? "animate-spin" : ""} />
-              {busy ? "Refreshing…" : "Refresh"}
+              {busy ? "Checking…" : "Check again"}
             </motion.button>
             <button type="button" className="btn-ghost h-11 flex-1" onClick={() => setView("verify")}>
-              {valid ? "Manage pass" : "Verify"}
+              {valid ? "See your pass" : "Get verified"}
             </button>
           </div>
         </div>
       </Modal>
 
-      <Modal open={view === "help"} onClose={closeSheet} title="Help" size="lg">
+      <Modal open={view === "help"} onClose={closeSheet} title="Quick answers" size="lg">
         <div className="space-y-2">
-          {faqs.map((item, idx) => {
+          {helpItems.map((item, idx) => {
             const open = openFaq === idx;
             return (
               <div key={item.q} className="overflow-hidden rounded-xl border border-neutral-100">
