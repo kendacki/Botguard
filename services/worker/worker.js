@@ -37,10 +37,10 @@ async function processOne(row) {
       commitmentHash,
       validityPeriodSeconds: row.validityPeriodSeconds || 31536000,
     });
-    if (!onchain) {
+    if (!onchain?.txHash) {
       await updateVerification(id, {
         status: "FAILED",
-        failureReason: "On-chain issueCredential failed",
+        failureReason: onchain?.error || "On-chain issueCredential failed",
       });
       return;
     }

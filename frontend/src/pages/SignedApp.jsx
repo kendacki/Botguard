@@ -207,7 +207,18 @@ export default function SignedApp({
                         <p className="mt-1 text-xs text-mute">{chainLabel || "Network ready"}</p>
                       </div>
                     </div>
-                    <StatusPill ok={valid} label={valid ? "Valid pass" : "Needs verify"} />
+                    <StatusPill
+                      ok={valid}
+                      label={
+                        valid
+                          ? "Valid pass"
+                          : verification?.status === "FAILED"
+                            ? "Issue failed"
+                            : feeEscrowed
+                              ? "Fee paid"
+                              : "Needs verify"
+                      }
+                    />
                   </div>
 
                   <div className="mt-5 grid grid-cols-3 gap-2.5">
@@ -244,7 +255,9 @@ export default function SignedApp({
                     copy={
                       valid
                         ? "Reuse this status across BOT Chain apps and tokens."
-                        : "Pick a tier and region, then submit in one step."
+                        : feeEscrowed
+                          ? "Your fee is escrowed. We are issuing the on-chain pass."
+                          : "Pay 0.5 BOT once. We issue the pass automatically."
                     }
                     onClick={() => setView("verify")}
                   />
@@ -292,7 +305,22 @@ export default function SignedApp({
                       <p className="truncate font-mono text-sm font-semibold">{shortAddr(account)}</p>
                     </div>
                   </div>
-                  <StatusPill ok={valid} label={valid ? "Valid" : "No credential"} />
+                  <StatusPill
+                    ok={valid}
+                    label={
+                      valid
+                        ? "Valid"
+                        : verification?.status === "FAILED"
+                          ? "Issue failed"
+                          : ["PENDING", "IN_REVIEW", "SIGNED", "SUBMITTED"].includes(
+                              verification?.status
+                            )
+                            ? "Issuing"
+                            : feeEscrowed
+                              ? "Fee paid"
+                              : "No credential"
+                    }
+                  />
                 </div>
 
                 <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
@@ -312,6 +340,16 @@ export default function SignedApp({
                     <StatusRow icon={Sparkles} label="Network" value={chainLabel || null} />
                   </div>
                 </div>
+
+                {!valid && !credential ? (
+                  <p className="mt-4 text-sm leading-relaxed text-mute">
+                    {verification?.status === "FAILED"
+                      ? verification.failureReason || "Issue failed. Open Verify to retry."
+                      : feeEscrowed
+                        ? "Fee is paid. Your pass should appear here after the issue transaction confirms."
+                        : "No on-chain pass yet. Open Verify, pay the fee, and we issue the credential automatically."}
+                  </p>
+                ) : null}
 
                 <div className="mt-5 flex flex-col gap-2 sm:flex-row">
                   <motion.button
@@ -347,7 +385,7 @@ export default function SignedApp({
               <PageHero
                 eyebrow="Verify"
                 title="Issue your on-chain pass"
-                copy="Choose a tier and region. We post a hash — never your documents or personal details."
+                copy="Pay the verification fee from this wallet. We issue the hashed pass on BOT Chain right after confirmation."
                 art={pageArt.verify}
               />
 
@@ -369,8 +407,8 @@ export default function SignedApp({
                     <div>
                       <p className="text-xs font-semibold text-ink">Step 1 · Pay verification fee</p>
                       <p className="mt-0.5 text-[11px] text-mute">
-                        Escrow {verificationFeeLabel || "0.5 BOT"} from this wallet. No tier data is
-                        published with the payment.
+                        Escrow {verificationFeeLabel || "0.5 BOT"} from this wallet. After it
+                        confirms, we issue your credential automatically.
                       </p>
                     </div>
                     <StatusPill
@@ -400,7 +438,8 @@ export default function SignedApp({
                   </motion.button>
                   {feeEscrowed ? (
                     <p className="mt-2 text-[11px] leading-relaxed text-mute">
-                      Escrowed and awaiting issuer review. You can submit verification next.
+                      Payment received. Issuing your pass on chain — this usually takes a few
+                      seconds.
                     </p>
                   ) : null}
                 </div>
@@ -503,7 +542,7 @@ export default function SignedApp({
                     whileTap={{ scale: 0.99 }}
                   >
                     <ShieldCheck size={15} />
-                    {busy ? "Submitting…" : "Approve / issue"}
+                    {busy ? "Issuing…" : "Issue credential"}
                   </motion.button>
                   <button
                     type="button"

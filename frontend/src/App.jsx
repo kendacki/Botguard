@@ -257,6 +257,13 @@ export default function App() {
         if (!alive) return;
         setVerification(status);
         if (status.status === "CONFIRMED" || status.status === "FAILED") {
+          if (status.status === "FAILED") {
+            setError(status.failureReason || "Credential issue failed.");
+            setSuccess("");
+          } else {
+            setSuccess("Credential issued on BOT Chain.");
+            setError("");
+          }
           try {
             const cred = await api(`/credentials/${account}`);
             if (alive) setCredential(cred);
@@ -352,7 +359,7 @@ export default function App() {
     setSuccess("");
   }
 
-  async function submitVerification() {
+  async function issueCredential({ skipFeeCheck = false } = {}) {
     setError("");
     setSuccess("");
     if (!account) {
@@ -363,7 +370,7 @@ export default function App() {
       setError("Enter a valid 0x address.");
       return;
     }
-    if (!feeEscrowed) {
+    if (!skipFeeCheck && !feeEscrowed) {
       setError(`Pay the ${feeLabel} verification fee first.`);
       return;
     }
@@ -385,13 +392,17 @@ export default function App() {
       });
       setVerificationId(accepted.requestId);
       setVerification(accepted);
-      setSuccess("Verification accepted. Waiting for confirm.");
+      setSuccess("Issuing your credential on BOT Chain…");
       await loadFeeStatus(account);
     } catch (err) {
       setError(err.message);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function submitVerification() {
+    return issueCredential();
   }
 
   async function payVerificationFee() {
@@ -460,13 +471,9 @@ export default function App() {
         feeStatus: "ESCROWED",
         escrowed: true,
       });
-      const scan = explorerTxUrl(tx.hash);
-      setSuccess(
-        scan
-          ? `Fee escrowed. Awaiting issuer review. Tx: ${shortAddr(tx.hash)}`
-          : "Fee escrowed. Awaiting issuer review."
-      );
+      setSuccess("Fee confirmed. Issuing your credential…");
       await loadFeeStatus(account);
+      await issueCredential({ skipFeeCheck: true });
     } catch (err) {
       setError(err?.shortMessage || err.message || "Fee payment failed");
     } finally {
@@ -506,8 +513,27 @@ export default function App() {
       return;
     }
     try {
-      setCredential(await api(`/credentials/${account}`));
-      setSuccess("Status refreshed.");
+      const fee = await loadFeeStatus(account);
+      try {
+        const cred = await api(`/credentials/${account}`);
+        setCredential(cred);
+        setSuccess("Status refreshed.");
+        return;
+      } catch (err) {
+        setCredential(null);
+        const escrowedNow =
+          fee?.feeStatus === "ESCROWED" || fee?.escrowed === true || feeEscrowed;
+        if (escrowedNow) {
+          setSuccess("Fee is on record. Issuing your credential…");
+          await issueCredential({ skipFeeCheck: true });
+          return;
+        }
+        if (/No credential/i.test(err.message)) {
+          setSuccess("No credential yet. Pay the verification fee to issue one.");
+          return;
+        }
+        throw err;
+      }
     } catch (err) {
       setError(err.message);
       setCredential(null);

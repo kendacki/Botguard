@@ -30,6 +30,7 @@ const {
   revokeOnChain,
   renewOnChain,
   readEscrowedFee,
+  readCredentialOnChain,
   readVerificationFee,
   assertIssuerReady,
 } = require("./chain");
@@ -317,10 +318,19 @@ app.get("/verifications/:requestId", async (req, res) => {
 
 app.get("/credentials/:holderAddress", async (req, res) => {
   const address = req.params.holderAddress;
+  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+    return res.status(400).json({ error: "Invalid holder address" });
+  }
   const cached = await getCachedCredential(address);
   if (cached) return res.json(cached);
 
-  const row = await getCredential(address);
+  let row = await getCredential(address);
+  if (!row) {
+    const onchain = await readCredentialOnChain(address);
+    if (onchain) {
+      row = await upsertCredentialCache(onchain);
+    }
+  }
   if (!row) return res.status(404).json({ error: "No credential on record" });
 
   const valid = !row.revoked && new Date(row.expiresAt) > new Date();
@@ -491,17 +501,17 @@ async function processVerificationInline(requestId) {
         commitmentHash,
         validityPeriodSeconds: row.validityPeriodSeconds,
       });
-      if (!onchain) {
+      if (!onchain?.txHash) {
         await updateVerification(requestId, {
           status: "FAILED",
-          failureReason: "On-chain issueCredential failed",
+          failureReason: onchain?.error || "On-chain issueCredential failed",
         });
         await writeAudit({
           actorType: "SYSTEM",
           actorAddress: null,
           action: "ISSUE_FAILED",
           holderAddress: row.holderAddress,
-          detail: { requestId },
+          detail: { requestId, error: onchain?.error || null },
         });
         return;
       }

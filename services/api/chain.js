@@ -45,6 +45,7 @@ const REGISTRY_ABI = [
   "event CredentialIssued(address indexed holder, address indexed issuer, uint8 tier, bytes2 jurisdiction, uint64 expiresAt)",
   "event CredentialRevoked(address indexed holder, bytes32 reason, address indexed revokedBy)",
   "event CredentialRenewed(address indexed holder, uint64 newExpiresAt)",
+  "function credentials(address holder) view returns (bytes32 commitmentHash, uint8 tier, bytes2 jurisdiction, address issuer, uint64 issuedAt, uint64 expiresAt, bool revoked, bytes32 revocationReason)",
 ];
 
 function getProvider() {
@@ -110,8 +111,9 @@ async function issueOnChain({ holderAddress, tier, jurisdiction, commitmentHash,
     const receipt = await tx.wait();
     return { txHash: receipt.hash, commitmentHash };
   } catch (err) {
-    console.warn("[chain] issueOnChain failed:", err.message);
-    return null;
+    const reason = err.shortMessage || err.reason || err.message;
+    console.warn("[chain] issueOnChain failed:", reason);
+    return { error: reason };
   }
 }
 
@@ -180,6 +182,37 @@ async function readEscrowedFee(holderAddress) {
   }
 }
 
+async function readCredentialOnChain(holderAddress) {
+  const registry = getRegistryRead();
+  if (!registry) return null;
+  try {
+    const cred = await registry.credentials(holderAddress);
+    const issuedAt = Number(cred.issuedAt || 0n);
+    if (!issuedAt) return null;
+    let jurisdiction = "";
+    try {
+      jurisdiction = ethers.toUtf8String(cred.jurisdiction).replace(/\0/g, "").trim();
+    } catch {
+      jurisdiction = null;
+    }
+    return {
+      holderAddress,
+      commitmentHash: cred.commitmentHash,
+      tier: Number(cred.tier),
+      jurisdiction: jurisdiction || null,
+      issuerAddress: cred.issuer,
+      issuedAt: new Date(issuedAt * 1000).toISOString(),
+      expiresAt: new Date(Number(cred.expiresAt) * 1000).toISOString(),
+      revoked: Boolean(cred.revoked),
+      revocationReason: cred.revocationReason,
+      lastSyncedBlock: 0,
+    };
+  } catch (err) {
+    console.warn("[chain] readCredentialOnChain failed:", err.message);
+    return null;
+  }
+}
+
 async function readVerificationFee() {
   const registry = getRegistryRead();
   if (!registry) {
@@ -198,6 +231,7 @@ module.exports = {
   renewOnChain,
   rejectOnChain,
   readEscrowedFee,
+  readCredentialOnChain,
   readVerificationFee,
   getRegistryAddress,
   loadDeployment,

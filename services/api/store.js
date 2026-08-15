@@ -268,9 +268,10 @@ async function listPendingVerifications(limit = 10) {
 }
 
 async function upsertCredentialCache(cred) {
+  const row = { ...cred };
   if (useMemory) {
-    db.store.credentials_cache.set(cred.holderAddress.toLowerCase(), { ...cred });
-    return;
+    db.store.credentials_cache.set(cred.holderAddress.toLowerCase(), row);
+    return row;
   }
   await db.pool.query(
     `INSERT INTO credentials_cache
@@ -299,6 +300,7 @@ async function upsertCredentialCache(cred) {
       cred.lastSyncedBlock || 0,
     ]
   );
+  return row;
 }
 
 async function getCredential(address) {
