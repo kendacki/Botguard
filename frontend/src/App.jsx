@@ -6,7 +6,6 @@ import {
   Copy,
   FileSearch,
   HelpCircle,
-  Home,
   LogOut,
   Minus,
   Plus,
@@ -159,9 +158,8 @@ export default function App() {
   const feeLabel = `${formatEther(verificationFee)} BOT`;
 
   const signedNav = [
-    { id: "home", label: "Home", icon: Home },
-    { id: "status", label: "Status", icon: FileSearch },
     { id: "verify", label: "Verify", icon: ShieldCheck },
+    { id: "status", label: "Status", icon: FileSearch },
     { id: "help", label: "Help", icon: HelpCircle },
   ];
 
