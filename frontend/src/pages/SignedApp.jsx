@@ -1,12 +1,15 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
   CheckCircle2,
+  Copy,
+  ExternalLink,
   FileSearch,
   Globe2,
   HelpCircle,
   Layers3,
+  Lock,
   Minus,
   Plus,
   RefreshCw,
@@ -22,68 +25,51 @@ import { explorerAddressUrl } from "../lib/chain.js";
 function decodePassMeta(tokenURI) {
   if (!tokenURI || !tokenURI.startsWith("data:application/json;base64,")) return null;
   try {
-    const json = atob(tokenURI.slice("data:application/json;base64,".length));
-    return JSON.parse(json);
+    return JSON.parse(atob(tokenURI.slice("data:application/json;base64,".length)));
   } catch {
     return null;
   }
 }
 
-function NftPassCard({ nft }) {
-  if (!nft) return null;
-  const meta = decodePassMeta(nft.tokenURI);
-  const href = explorerAddressUrl(nft.address);
-  return (
-    <div className="glass-soft mt-4 flex items-center gap-3 px-3.5 py-3">
-      {meta?.image ? (
-        <img src={meta.image} alt="" className="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-white/70" />
-      ) : (
-        <span className="glass-icon h-16 w-16 shrink-0 text-lg font-bold">BGV</span>
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-mute">Verification NFT</p>
-        <p className="mt-0.5 truncate text-sm font-semibold text-ink">
-          {nft.tier || "Pass"} · {nft.jurisdiction || "—"}
-        </p>
-        <p className="mt-0.5 font-mono text-[11px] text-mute">#{shortAddr(nft.tokenId)} · soulbound</p>
-      </div>
-      {href ? (
-        <a className="text-xs font-medium text-brand underline-offset-2 hover:underline" href={href} target="_blank" rel="noreferrer">
-          View
-        </a>
-      ) : null}
-    </div>
-  );
+function formatExpiry(iso) {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  const days = Math.round((date.getTime() - Date.now()) / 86400000);
+  if (Number.isNaN(days)) return "—";
+  if (days < 0) return "Expired";
+  if (days < 2) return "Today";
+  if (days < 45) return `${days} days left`;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
-const pageArt = {
-  home: "/illustrations/dash/home.svg",
-};
+function passLabel({ valid, verification, feeEscrowed }) {
+  if (valid) return "Cleared";
+  if (verification?.status === "FAILED") return "Issue failed";
+  if (["PENDING", "IN_REVIEW", "SIGNED", "SUBMITTED"].includes(verification?.status)) {
+    return "Issuing";
+  }
+  if (feeEscrowed) return "Fee paid";
+  return "Unverified";
+}
 
-function StatusPill({ ok, label }) {
+function StatusPill({ ok, label, live = false }) {
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium backdrop-blur-md ${
         ok
-          ? "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-400/30"
-          : "bg-white/50 text-mute ring-1 ring-white/70"
+          ? "bg-emerald-500/12 text-emerald-700 ring-1 ring-emerald-400/30"
+          : live
+            ? "bg-brand/10 text-brand ring-1 ring-brand/20"
+            : "bg-white/55 text-mute ring-1 ring-white/70"
       }`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-emerald-500" : "bg-neutral-400"}`} />
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          ok ? "bg-emerald-500" : live ? "animate-pulse bg-brand" : "bg-neutral-400"
+        }`}
+      />
       {label}
     </span>
-  );
-}
-
-function Metric({ icon: Icon, label, value }) {
-  return (
-    <div className="glass-soft px-3.5 py-3">
-      <div className="flex items-center gap-1.5 text-mute">
-        <Icon size={13} strokeWidth={2} />
-        <p className="text-[11px] font-medium">{label}</p>
-      </div>
-      <p className="mt-1.5 truncate text-sm font-semibold text-ink">{value || "—"}</p>
-    </div>
   );
 }
 
@@ -101,64 +87,12 @@ function StatusRow({ icon: Icon, label, value }) {
   );
 }
 
-function ActionTile({ icon: Icon, title, copy, onClick, accent = false }) {
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.98 }}
-      className={`group flex w-full items-start gap-3 rounded-2xl border p-4 text-left backdrop-blur-xl transition ${
-        accent
-          ? "border-brand/25 bg-brand/90 text-white shadow-[0_14px_36px_rgba(138,63,252,0.28)]"
-          : "border-white/70 bg-white/45 hover:bg-white/70 hover:shadow-[0_12px_28px_rgba(0,0,0,0.06)]"
-      }`}
-    >
-      <span
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${
-          accent
-            ? "bg-white/15 text-white"
-            : "border border-white/80 bg-white/60 text-brand group-hover:bg-brand group-hover:text-white"
-        }`}
-      >
-        <Icon size={18} strokeWidth={2} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className={`block text-sm font-semibold ${accent ? "text-white" : "text-ink"}`}>{title}</span>
-        <span className={`mt-0.5 block text-xs leading-relaxed ${accent ? "text-white/80" : "text-mute"}`}>
-          {copy}
-        </span>
-      </span>
-      <ArrowRight
-        size={16}
-        className={`mt-1 shrink-0 transition group-hover:translate-x-0.5 ${
-          accent ? "text-white/80" : "text-mute"
-        }`}
-      />
-    </motion.button>
-  );
-}
-
-function passLabel({ valid, verification, feeEscrowed }) {
-  if (valid) return "Valid pass";
-  if (verification?.status === "FAILED") return "Issue failed";
-  if (["PENDING", "IN_REVIEW", "SIGNED", "SUBMITTED"].includes(verification?.status)) {
-    return "Issuing";
-  }
-  if (feeEscrowed) return "Fee paid";
-  return "Needs verify";
-}
-
 function FlowStep({ n, title, done, current }) {
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2">
       <span
         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
-          done
-            ? "bg-emerald-500 text-white"
-            : current
-              ? "bg-brand text-white"
-              : "bg-neutral-100 text-mute"
+          done ? "bg-emerald-500 text-white" : current ? "bg-brand text-white" : "bg-neutral-100 text-mute"
         }`}
       >
         {done ? <CheckCircle2 size={13} /> : n}
@@ -167,6 +101,54 @@ function FlowStep({ n, title, done, current }) {
         {title}
       </span>
     </div>
+  );
+}
+
+function NftPassCard({ nft }) {
+  if (!nft) return null;
+  const meta = decodePassMeta(nft.tokenURI);
+  const href = explorerAddressUrl(nft.address);
+  return (
+    <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/50 bg-white/35 px-3.5 py-3">
+      {meta?.image ? (
+        <img src={meta.image} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-white/80" />
+      ) : (
+        <span className="glass-icon h-14 w-14 shrink-0 text-sm font-bold">BGV</span>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-white/70">Soulbound NFT</p>
+        <p className="mt-0.5 truncate text-sm font-semibold text-white">
+          {nft.tier || "Pass"} · {nft.jurisdiction || "—"}
+        </p>
+      </div>
+      {href ? (
+        <a
+          className="inline-flex items-center gap-1 text-xs font-medium text-white/90 underline-offset-2 hover:underline"
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+        >
+          View <ExternalLink size={11} />
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
+function QuickAction({ icon: Icon, label, onClick }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      className="dash-chip group flex-1 flex-col items-center justify-center gap-2 py-4 text-center sm:min-w-0"
+    >
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand/10 text-brand transition group-hover:bg-brand group-hover:text-white">
+        <Icon size={18} strokeWidth={1.9} />
+      </span>
+      <span className="text-xs font-semibold text-ink">{label}</span>
+    </motion.button>
   );
 }
 
@@ -201,122 +183,183 @@ export default function SignedApp({
   onRevoke,
 }) {
   const openedVerifyOnce = useRef(false);
+  const [copied, setCopied] = useState(false);
   const issuing = ["PENDING", "IN_REVIEW", "SIGNED", "SUBMITTED"].includes(verification?.status);
   const closeSheet = () => setView("home");
+  const label = passLabel({ valid, verification, feeEscrowed });
+  const nftMeta = decodePassMeta(credential?.nft?.tokenURI);
 
   useEffect(() => {
     if (openedVerifyOnce.current || valid || credential) return undefined;
     openedVerifyOnce.current = true;
-    const timer = setTimeout(() => setView("verify"), 420);
+    const timer = setTimeout(() => setView("verify"), 520);
     return () => clearTimeout(timer);
   }, [valid, credential, setView]);
 
-  const label = passLabel({ valid, verification, feeEscrowed });
+  async function copyWallet() {
+    if (!account) return;
+    try {
+      await navigator.clipboard.writeText(account);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    } catch {
+      /* ignore */
+    }
+  }
 
   return (
     <div className="dash-shell min-h-[calc(100vh-4rem)]">
-      <main className="font-poppins mx-auto w-full max-w-5xl px-4 py-8 md:px-6 md:py-10">
+      <main className="font-poppins mx-auto w-full max-w-3xl px-4 py-8 md:px-6 md:py-10">
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28 }}
+          transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
           className="space-y-5"
         >
-          <div className="glass-card relative overflow-hidden px-5 py-6 sm:px-8 sm:py-7">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand">Your pass</p>
+              <h1 className="mt-1.5 text-[1.65rem] font-semibold tracking-tight text-ink sm:text-3xl">
+                {valid ? "Cleared for gated apps." : "One check. Then you move."}
+              </h1>
+            </div>
+            <StatusPill ok={valid} live={issuing || feeBusy} label={label} />
+          </div>
+
+          <motion.section
+            layout
+            className={`dash-pass ${
+              valid
+                ? "border-brand/20 bg-gradient-to-br from-brand via-[#9b5cff] to-[#5b21b6] text-white"
+                : "bg-white/60"
+            }`}
+          >
             <div
-              className="pointer-events-none absolute -right-6 -top-10 h-44 w-44 rounded-full bg-brand/10 blur-3xl"
+              className={`pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full blur-3xl ${
+                valid ? "bg-white/20" : "bg-brand/15"
+              }`}
               aria-hidden="true"
             />
-            <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="max-w-xl">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">Dashboard</p>
-                <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-                  {valid ? "You're cleared to move." : "Let's get this wallet verified."}
-                </h1>
-                <p className="mt-2 text-sm font-normal leading-relaxed text-mute sm:text-[15px]">
-                  {valid
-                    ? "Your credential is live. Gated apps and tokens can trust this wallet without another KYC run."
-                    : "Stay here. Pay once in the popup, and we issue the hashed pass on BOT Chain."}
-                </p>
+            <div className="relative flex flex-col gap-5 sm:flex-row sm:items-stretch">
+              <div
+                className={`flex h-[132px] w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:h-auto sm:w-[148px] ${
+                  valid ? "bg-white/15 ring-1 ring-white/25" : "bg-brand/8 ring-1 ring-brand/10"
+                }`}
+              >
+                {valid && nftMeta?.image ? (
+                  <img src={nftMeta.image} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <ShieldCheck size={44} strokeWidth={1.6} className={valid ? "text-white" : "text-brand"} />
+                )}
               </div>
-              <motion.img
-                src={pageArt.home}
-                alt=""
-                className="mx-auto h-[88px] w-[88px] shrink-0 drop-shadow-sm sm:mx-0 sm:h-[104px] sm:w-[104px]"
-                whileHover={{ y: -4, rotate: -2 }}
-                transition={{ type: "spring", stiffness: 280, damping: 16 }}
-                draggable={false}
-              />
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className={`text-[11px] font-medium uppercase tracking-wide ${valid ? "text-white/70" : "text-mute"}`}>
+                      {valid ? "On-chain credential" : "Waiting for verification"}
+                    </p>
+                    <p className={`mt-1 text-xl font-semibold tracking-tight ${valid ? "text-white" : "text-ink"}`}>
+                      {valid ? `${credential?.tier || "Retail"} · ${credential?.jurisdiction || "—"}` : "No pass yet"}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={copyWallet}
+                  className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    valid ? "bg-white/15 text-white hover:bg-white/25" : "bg-white/70 text-ink hover:bg-white"
+                  }`}
+                >
+                  <Wallet size={13} />
+                  {copied ? "Copied" : shortAddr(account)}
+                  <Copy size={12} />
+                </button>
+
+                <div className={`mt-4 grid grid-cols-3 gap-2 text-[11px] ${valid ? "text-white/80" : "text-mute"}`}>
+                  <div>
+                    <p className="font-medium opacity-80">Network</p>
+                    <p className={`mt-0.5 truncate text-sm font-semibold ${valid ? "text-white" : "text-ink"}`}>
+                      {chainLabel || "BOT Chain"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium opacity-80">Expires</p>
+                    <p className={`mt-0.5 truncate text-sm font-semibold ${valid ? "text-white" : "text-ink"}`}>
+                      {formatExpiry(credential?.expiresAt)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium opacity-80">Privacy</p>
+                    <p className={`mt-0.5 truncate text-sm font-semibold ${valid ? "text-white" : "text-ink"}`}>Hash only</p>
+                  </div>
+                </div>
+
+                {valid ? <NftPassCard nft={credential.nft} /> : null}
+
+                <motion.button
+                  type="button"
+                  className={`mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold transition ${
+                    valid
+                      ? "bg-white text-brand hover:bg-white/90"
+                      : "bg-brand text-white hover:bg-brandHover"
+                  }`}
+                  onClick={() => setView("verify")}
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.99 }}
+                >
+                  {valid ? "Manage pass" : `Verify · ${verificationFeeLabel || "0.5 BOT"}`}
+                  <ArrowRight size={16} />
+                </motion.button>
+              </div>
+            </div>
+          </motion.section>
+
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <div className="dash-chip">
+              <span className="glass-icon h-8 w-8 shrink-0">
+                <Layers3 size={14} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-mute">Tier</p>
+                <p className="truncate text-sm font-semibold text-ink">{credential?.tier || "—"}</p>
+              </div>
+            </div>
+            <div className="dash-chip">
+              <span className="glass-icon h-8 w-8 shrink-0">
+                <Globe2 size={14} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-mute">Region</p>
+                <p className="truncate text-sm font-semibold text-ink">{credential?.jurisdiction || "—"}</p>
+              </div>
+            </div>
+            <div className="dash-chip">
+              <span className="glass-icon h-8 w-8 shrink-0">
+                <Lock size={14} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-mute">On chain</p>
+                <p className="truncate text-sm font-semibold text-ink">No PII</p>
+              </div>
+            </div>
+            <div className="dash-chip">
+              <span className="glass-icon h-8 w-8 shrink-0">
+                <Sparkles size={14} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-mute">NFT</p>
+                <p className="truncate text-sm font-semibold text-ink">{credential?.nft ? "Issued" : "Pending"}</p>
+              </div>
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="glass-card p-5 sm:p-6">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-3">
-                  <span className="glass-icon h-11 w-11 shrink-0">
-                    <Wallet size={20} strokeWidth={1.8} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-mute">Connected wallet</p>
-                    <p className="mt-1 truncate font-mono text-sm font-semibold tracking-tight text-ink">
-                      {shortAddr(account)}
-                    </p>
-                    <p className="mt-1 text-xs text-mute">{chainLabel || "Network ready"}</p>
-                  </div>
-                </div>
-                <StatusPill ok={valid} label={label} />
-              </div>
-
-              <div className="mt-5 grid grid-cols-3 gap-2.5">
-                <Metric icon={Layers3} label="Tier" value={credential?.tier} />
-                <Metric icon={Globe2} label="Region" value={credential?.jurisdiction} />
-                <Metric
-                  icon={ShieldCheck}
-                  label="Expires"
-                  value={credential?.expiresAt ? new Date(credential.expiresAt).toLocaleDateString() : null}
-                />
-              </div>
-
-              <NftPassCard nft={credential?.nft} />
-
-              <motion.button
-                type="button"
-                className="btn-primary mt-5 h-11 w-full"
-                onClick={() => setView("verify")}
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.99 }}
-              >
-                {valid ? "Manage pass" : "Verify this wallet"}
-                <ArrowRight size={16} />
-              </motion.button>
-            </div>
-
-            <div className="space-y-2.5">
-              <ActionTile
-                accent
-                icon={valid ? CheckCircle2 : ShieldCheck}
-                title={valid ? "Pass is active" : "Issue your pass"}
-                copy={
-                  valid
-                    ? "Reuse this status across BOT Chain apps and tokens."
-                    : "Opens here — pay the fee, then we issue automatically."
-                }
-                onClick={() => setView("verify")}
-              />
-              <ActionTile
-                icon={FileSearch}
-                title="Check status"
-                copy="Tier, region, expiry, and live request state."
-                onClick={() => setView("status")}
-              />
-              <ActionTile
-                icon={HelpCircle}
-                title="Quick answers"
-                copy="How hashing, revoke, and gating work — in plain words."
-                onClick={() => setView("help")}
-              />
-            </div>
+          <div className="flex gap-2.5">
+            <QuickAction icon={valid ? CheckCircle2 : ShieldCheck} label={valid ? "Pass" : "Verify"} onClick={() => setView("verify")} />
+            <QuickAction icon={FileSearch} label="Status" onClick={() => setView("status")} />
+            <QuickAction icon={RefreshCw} label="Refresh" onClick={onRefresh} />
+            <QuickAction icon={HelpCircle} label="Help" onClick={() => setView("help")} />
           </div>
         </motion.div>
       </main>
@@ -340,9 +383,7 @@ export default function SignedApp({
             </span>
             <div className="min-w-0">
               <p className="text-[11px] font-medium text-mute">Holder</p>
-              <p className="mt-0.5 break-all font-mono text-xs font-semibold leading-relaxed text-ink">
-                {account}
-              </p>
+              <p className="mt-0.5 break-all font-mono text-xs font-semibold leading-relaxed text-ink">{account}</p>
             </div>
           </div>
 
@@ -387,8 +428,11 @@ export default function SignedApp({
               </p>
               <StatusPill
                 ok={valid || feeEscrowed || feeStatus?.feeStatus === "SETTLED"}
+                live={feeBusy}
                 label={
-                  feeBusy ? "Confirming…" : feeStatus?.feeStatus || (feeEscrowed ? "ESCROWED" : valid ? "SETTLED" : "Unpaid")
+                  feeBusy
+                    ? "Confirming…"
+                    : feeStatus?.feeStatus || (feeEscrowed ? "ESCROWED" : valid ? "SETTLED" : "Unpaid")
                 }
               />
             </div>
@@ -399,7 +443,11 @@ export default function SignedApp({
             </p>
           </div>
 
-          {valid ? <NftPassCard nft={credential?.nft} /> : null}
+          {valid && credential?.nft ? (
+            <div className="rounded-2xl bg-brand p-3">
+              <NftPassCard nft={credential.nft} />
+            </div>
+          ) : null}
 
           {(verification?.txHash || feeStatus?.feeTxHash || verificationId) && (
             <div className="space-y-1.5 text-xs">
@@ -454,12 +502,7 @@ export default function SignedApp({
               <button type="button" className="btn-primary h-11 w-full" onClick={closeSheet}>
                 Done
               </button>
-              <button
-                type="button"
-                className="btn-muted h-10 w-full text-xs"
-                disabled={busy}
-                onClick={onRevoke}
-              >
+              <button type="button" className="btn-muted h-10 w-full text-xs" disabled={busy} onClick={onRevoke}>
                 Revoke credential
               </button>
             </div>
@@ -482,22 +525,12 @@ export default function SignedApp({
                       : `Pay ${verificationFeeLabel || "0.5 BOT"}`}
               </motion.button>
               {feeEscrowed ? (
-                <button
-                  type="button"
-                  className="btn-ghost h-10 w-full text-xs"
-                  disabled={busy || feeBusy}
-                  onClick={onVerify}
-                >
+                <button type="button" className="btn-ghost h-10 w-full text-xs" disabled={busy || feeBusy} onClick={onVerify}>
                   Retry issue
                 </button>
               ) : null}
               {feeEscrowed && !valid ? (
-                <button
-                  type="button"
-                  className="btn-muted h-10 w-full text-xs"
-                  disabled={busy || feeBusy}
-                  onClick={onReject}
-                >
+                <button type="button" className="btn-muted h-10 w-full text-xs" disabled={busy || feeBusy} onClick={onReject}>
                   Cancel & refund
                 </button>
               ) : null}
@@ -513,18 +546,14 @@ export default function SignedApp({
               <p className="text-[11px] font-medium text-mute">Wallet</p>
               <p className="truncate font-mono text-sm font-semibold">{shortAddr(account)}</p>
             </div>
-            <StatusPill ok={valid} label={label} />
+            <StatusPill ok={valid} live={issuing} label={label} />
           </div>
 
           <div className="grid gap-2.5 sm:grid-cols-2">
             <StatusRow icon={Layers3} label="Tier" value={credential?.tier} />
             <StatusRow icon={Globe2} label="Region" value={credential?.jurisdiction} />
             <StatusRow icon={RefreshCw} label="Request" value={verification?.status || "Ready"} />
-            <StatusRow
-              icon={ShieldCheck}
-              label="Expires"
-              value={credential?.expiresAt ? new Date(credential.expiresAt).toLocaleDateString() : null}
-            />
+            <StatusRow icon={ShieldCheck} label="Expires" value={formatExpiry(credential?.expiresAt)} />
             <div className="sm:col-span-2">
               <StatusRow icon={Sparkles} label="Network" value={chainLabel || null} />
             </div>
