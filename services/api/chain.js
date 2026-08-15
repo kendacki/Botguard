@@ -21,6 +21,14 @@ function loadDeployment() {
   return null;
 }
 
+function getPassAddress() {
+  return (
+    process.env.VERIFICATION_PASS_ADDRESS ||
+    loadDeployment()?.contracts?.VerificationPass ||
+    null
+  );
+}
+
 function getRegistryAddress() {
   return (
     process.env.CREDENTIAL_REGISTRY_ADDRESS ||
@@ -28,6 +36,15 @@ function getRegistryAddress() {
     null
   );
 }
+
+const PASS_ABI = [
+  "function issuePass(address holder, uint8 tier, bytes2 jurisdiction, uint64 expiresAt) returns (uint256)",
+  "function revokePass(address holder)",
+  "function hasPass(address holder) view returns (bool)",
+  "function passOf(address holder) view returns (uint256 tokenId, uint8 tier, bytes2 jurisdiction, uint64 issuedAt, uint64 expiresAt, bool exists)",
+  "function tokenURI(uint256 tokenId) view returns (string)",
+  "function tokenIdOf(address holder) view returns (uint256)",
+];
 
 const REGISTRY_ABI = [
   "function issueCredential(address holder, bytes32 commitmentHash, uint8 tier, bytes2 jurisdiction, uint64 validityPeriodSeconds)",
@@ -109,7 +126,20 @@ async function issueOnChain({ holderAddress, tier, jurisdiction, commitmentHash,
       Number(validityPeriodSeconds || 31536000)
     );
     const receipt = await tx.wait();
-    return { txHash: receipt.hash, commitmentHash };
+    const expiresAtUnix = Math.floor(Date.now() / 1000) + Number(validityPeriodSeconds || 31536000);
+    let nftTxHash = null;
+    let tokenId = null;
+    const minted = await mintPassOnChain({
+      holderAddress,
+      tier,
+      jurisdiction,
+      expiresAtUnix,
+    });
+    if (minted?.txHash) {
+      nftTxHash = minted.txHash;
+      tokenId = minted.tokenId;
+    }
+    return { txHash: receipt.hash, commitmentHash, nftTxHash, tokenId };
   } catch (err) {
     const reason = err.shortMessage || err.reason || err.message;
     console.warn("[chain] issueOnChain failed:", reason);
@@ -126,6 +156,11 @@ async function revokeOnChain(holderAddress, reason = "ISSUER_ERROR") {
     const reasonBytes = ethers.id(String(reason || "ISSUER_ERROR"));
     const tx = await registry.revokeCredential(holderAddress, reasonBytes);
     const receipt = await tx.wait();
+    try {
+      await revokePassOnChain(holderAddress);
+    } catch (passErr) {
+      console.warn("[chain] revokePass after credential revoke failed:", passErr.message);
+    }
     return { txHash: receipt.hash };
   } catch (err) {
     console.warn("[chain] revokeOnChain failed:", err.message);
@@ -213,6 +248,76 @@ async function readCredentialOnChain(holderAddress) {
   }
 }
 
+function encodeJurisdiction(jurisdiction) {
+  return ethers.hexlify(ethers.toUtf8Bytes(String(jurisdiction || "XX").padEnd(2, "\0"))).slice(0, 6);
+}
+
+async function mintPassOnChain({ holderAddress, tier, jurisdiction, expiresAtUnix }) {
+  const passAddress = getPassAddress();
+  const wallet = getIssuerWallet();
+  if (!wallet || !passAddress) return null;
+  try {
+    const nft = new ethers.Contract(passAddress, PASS_ABI, wallet);
+    const tx = await nft.issuePass(
+      holderAddress,
+      Number(tier),
+      encodeJurisdiction(jurisdiction),
+      Number(expiresAtUnix)
+    );
+    const receipt = await tx.wait();
+    const tokenId = await nft.tokenIdOf(holderAddress);
+    return { txHash: receipt.hash, tokenId: tokenId.toString() };
+  } catch (err) {
+    console.warn("[chain] mintPassOnChain failed:", err.shortMessage || err.message);
+    return { error: err.shortMessage || err.message };
+  }
+}
+
+async function revokePassOnChain(holderAddress) {
+  const passAddress = getPassAddress();
+  const wallet = getIssuerWallet();
+  if (!wallet || !passAddress) return null;
+  const nft = new ethers.Contract(passAddress, PASS_ABI, wallet);
+  const tx = await nft.revokePass(holderAddress);
+  const receipt = await tx.wait();
+  return { txHash: receipt.hash };
+}
+
+async function readPassOnChain(holderAddress) {
+  const passAddress = getPassAddress();
+  const provider = getProvider();
+  if (!passAddress || !provider) return null;
+  try {
+    const nft = new ethers.Contract(passAddress, PASS_ABI, provider);
+    const row = await nft.passOf(holderAddress);
+    if (!row.exists) return null;
+    let jurisdiction = "";
+    try {
+      jurisdiction = ethers.toUtf8String(row.jurisdiction).replace(/\0/g, "").trim();
+    } catch {
+      jurisdiction = null;
+    }
+    let tokenURI = null;
+    try {
+      tokenURI = await nft.tokenURI(row.tokenId);
+    } catch {
+      tokenURI = null;
+    }
+    return {
+      address: passAddress,
+      tokenId: row.tokenId.toString(),
+      tier: Number(row.tier),
+      jurisdiction: jurisdiction || null,
+      issuedAt: Number(row.issuedAt) ? new Date(Number(row.issuedAt) * 1000).toISOString() : null,
+      expiresAt: Number(row.expiresAt) ? new Date(Number(row.expiresAt) * 1000).toISOString() : null,
+      tokenURI,
+    };
+  } catch (err) {
+    console.warn("[chain] readPassOnChain failed:", err.message);
+    return null;
+  }
+}
+
 async function readVerificationFee() {
   const registry = getRegistryRead();
   if (!registry) {
@@ -232,8 +337,11 @@ module.exports = {
   rejectOnChain,
   readEscrowedFee,
   readCredentialOnChain,
+  readPassOnChain,
+  mintPassOnChain,
   readVerificationFee,
   getRegistryAddress,
+  getPassAddress,
   loadDeployment,
   REGISTRY_ABI,
   getProvider,

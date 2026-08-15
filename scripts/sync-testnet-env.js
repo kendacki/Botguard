@@ -11,6 +11,7 @@ const updates = {
   ISSUER_REGISTRY_ADDRESS: dep.contracts.IssuerRegistry,
   CREDENTIAL_REGISTRY_ADDRESS: dep.contracts.CredentialRegistry,
   EXAMPLE_RWA_TOKEN_ADDRESS: dep.contracts.ExampleRWAToken,
+  VERIFICATION_PASS_ADDRESS: dep.contracts.VerificationPass,
   TREASURY_ADDRESS: dep.treasury,
   VERIFICATION_FEE: dep.verificationFee,
   BOTCHAIN_TESTNET_RPC: "https://rpc.bohr.life",

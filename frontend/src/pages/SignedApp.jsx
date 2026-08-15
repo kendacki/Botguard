@@ -17,6 +17,44 @@ import {
 import Alert from "../components/Alert.jsx";
 import Modal from "../components/Modal.jsx";
 import { shortAddr } from "../lib/api.js";
+import { explorerAddressUrl } from "../lib/chain.js";
+
+function decodePassMeta(tokenURI) {
+  if (!tokenURI || !tokenURI.startsWith("data:application/json;base64,")) return null;
+  try {
+    const json = atob(tokenURI.slice("data:application/json;base64,".length));
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function NftPassCard({ nft }) {
+  if (!nft) return null;
+  const meta = decodePassMeta(nft.tokenURI);
+  const href = explorerAddressUrl(nft.address);
+  return (
+    <div className="glass-soft mt-4 flex items-center gap-3 px-3.5 py-3">
+      {meta?.image ? (
+        <img src={meta.image} alt="" className="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-white/70" />
+      ) : (
+        <span className="glass-icon h-16 w-16 shrink-0 text-lg font-bold">BGV</span>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-mute">Verification NFT</p>
+        <p className="mt-0.5 truncate text-sm font-semibold text-ink">
+          {nft.tier || "Pass"} · {nft.jurisdiction || "—"}
+        </p>
+        <p className="mt-0.5 font-mono text-[11px] text-mute">#{shortAddr(nft.tokenId)} · soulbound</p>
+      </div>
+      {href ? (
+        <a className="text-xs font-medium text-brand underline-offset-2 hover:underline" href={href} target="_blank" rel="noreferrer">
+          View
+        </a>
+      ) : null}
+    </div>
+  );
+}
 
 const pageArt = {
   home: "/illustrations/dash/home.svg",
@@ -240,6 +278,8 @@ export default function SignedApp({
                 />
               </div>
 
+              <NftPassCard nft={credential?.nft} />
+
               <motion.button
                 type="button"
                 className="btn-primary mt-5 h-11 w-full"
@@ -354,10 +394,12 @@ export default function SignedApp({
             </div>
             <p className="mt-1 text-[11px] leading-relaxed text-mute">
               {valid
-                ? "This wallet can now be gated across BOT Chain apps."
-                : "Confirm in your wallet. We issue the hashed pass as soon as the fee lands."}
+                ? "This wallet can now be gated across BOT Chain apps. A unique soulbound NFT records the verification kind."
+                : "Confirm in your wallet. We issue the hashed pass and a unique NFT as soon as the fee lands."}
             </p>
           </div>
+
+          {valid ? <NftPassCard nft={credential?.nft} /> : null}
 
           {(verification?.txHash || feeStatus?.feeTxHash || verificationId) && (
             <div className="space-y-1.5 text-xs">

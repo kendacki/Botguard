@@ -31,6 +31,7 @@ const {
   renewOnChain,
   readEscrowedFee,
   readCredentialOnChain,
+  readPassOnChain,
   readVerificationFee,
   assertIssuerReady,
 } = require("./chain");
@@ -345,6 +346,16 @@ app.get("/credentials/:holderAddress", async (req, res) => {
     valid,
     source: useMemory ? "memory" : "postgres",
   };
+  const pass = await readPassOnChain(address);
+  if (pass) {
+    payload.nft = {
+      address: pass.address,
+      tokenId: pass.tokenId,
+      tier: tierLabel(pass.tier) || payload.tier,
+      jurisdiction: pass.jurisdiction || payload.jurisdiction,
+      tokenURI: pass.tokenURI,
+    };
+  }
   await setCachedCredential(address, payload, Number(process.env.CRED_CACHE_TTL || 3));
   res.json(payload);
 });

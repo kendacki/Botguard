@@ -85,6 +85,12 @@ async function main() {
   const rwaTokenAddress = await rwaToken.getAddress();
   console.log("ExampleRWAToken:", rwaTokenAddress);
 
+  const VerificationPass = await hre.ethers.getContractFactory("VerificationPass");
+  const verificationPass = await VerificationPass.deploy(deployer.address, issuer.address);
+  await verificationPass.waitForDeployment();
+  const verificationPassAddress = await verificationPass.getAddress();
+  console.log("VerificationPass:", verificationPassAddress);
+
   // Seed a demo credential so gated-transfer demos work immediately.
   const commitment = hre.ethers.keccak256(hre.ethers.toUtf8Bytes("demo-verification-record"));
   const jurisdiction = hre.ethers.hexlify(hre.ethers.toUtf8Bytes("NG"));
@@ -92,6 +98,14 @@ async function main() {
     await credentialRegistry
       .connect(issuer)
       .issueCredential(holder.address, commitment, 1, jurisdiction, 365 * 24 * 60 * 60)
+  ).wait();
+  await (
+    await verificationPass.connect(issuer).issuePass(
+      holder.address,
+      1,
+      jurisdiction,
+      BigInt(Math.floor(Date.now() / 1000)) + 365n * 24n * 60n * 60n
+    )
   ).wait();
   await (await rwaToken.mint(holder.address, hre.ethers.parseEther("1000"))).wait();
 
@@ -114,11 +128,13 @@ async function main() {
       IssuerRegistry: issuerRegistryAddress,
       CredentialRegistry: credentialRegistryAddress,
       ExampleRWAToken: rwaTokenAddress,
+      VerificationPass: verificationPassAddress,
     },
     env: {
       ISSUER_REGISTRY_ADDRESS: issuerRegistryAddress,
       CREDENTIAL_REGISTRY_ADDRESS: credentialRegistryAddress,
       EXAMPLE_RWA_TOKEN_ADDRESS: rwaTokenAddress,
+      VERIFICATION_PASS_ADDRESS: verificationPassAddress,
       TREASURY_ADDRESS: treasuryAddress,
       VERIFICATION_FEE: verificationFee.toString(),
     },
@@ -137,6 +153,7 @@ async function main() {
       `ISSUER_REGISTRY_ADDRESS=${issuerRegistryAddress}`,
       `CREDENTIAL_REGISTRY_ADDRESS=${credentialRegistryAddress}`,
       `EXAMPLE_RWA_TOKEN_ADDRESS=${rwaTokenAddress}`,
+      `VERIFICATION_PASS_ADDRESS=${verificationPassAddress}`,
       `TREASURY_ADDRESS=${treasuryAddress}`,
       `VERIFICATION_FEE=${verificationFee.toString()}`,
       `CHAIN_RPC_URL=${rpc}`,
