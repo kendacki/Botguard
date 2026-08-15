@@ -245,9 +245,17 @@ app.post("/verifications/:holderAddress/reject", requireIssuer, async (req, res)
       holderAddress: holder,
       txHash: result.txHash,
     });
-    res.json({ status: "REFUNDED", holderAddress: holder, txHash: result.txHash });
+    res.json({ status: "REFUNDED", holderAddress: holder, txHash: result.txHash, escrowed: false });
   } catch (err) {
-    res.status(400).json({ error: err.message || "Reject failed" });
+    const msg = String(err?.shortMessage || err?.message || "");
+    if (/NoFeeEscrowed/i.test(msg)) {
+      await upsertFeeStatus({
+        holderAddress: holder,
+        feeStatus: "REFUNDED",
+      });
+      return res.json({ status: "REFUNDED", holderAddress: holder, alreadyRefunded: true, escrowed: false });
+    }
+    res.status(400).json({ error: err.message || "Refund failed" });
   }
 });
 
@@ -261,13 +269,17 @@ app.post("/verifications", requireIssuer, async (req, res) => {
       validityPeriodSeconds = 31536000,
     } = req.body || {};
 
-    if (!holderAddress || !tier || !commitmentHash || !validityPeriodSeconds) {
-      return res.status(400).json({
-        error: "holderAddress, tier, commitmentHash, and validityPeriodSeconds are required",
-      });
+    if (!holderAddress || !/^0x[a-fA-F0-9]{40}$/i.test(holderAddress)) {
+      return res.status(400).json({ error: "holderAddress is required" });
     }
 
-    const tierNum = normalizeTier(tier);
+    const requestedTier = tier === undefined || tier === null || tier === "" ? "RETAIL" : tier;
+    const hash =
+      commitmentHash ||
+      commitmentHashFallback([holderAddress, String(requestedTier), Date.now()]);
+    const validity = Number(validityPeriodSeconds || 31536000);
+
+    const tierNum = normalizeTier(requestedTier);
     const depth = await queueDepth();
     const estimatedSeconds = depth > QUEUE_DEPTH_THRESHOLD ? 180 : 45;
 
@@ -276,8 +288,8 @@ app.post("/verifications", requireIssuer, async (req, res) => {
       issuerAddress: req.issuer.address,
       tier: tierNum,
       jurisdiction: jurisdiction ? String(jurisdiction).toUpperCase().slice(0, 2) : null,
-      commitmentHash,
-      validityPeriodSeconds: Number(validityPeriodSeconds),
+      commitmentHash: hash,
+      validityPeriodSeconds: validity,
       estimatedSeconds,
     });
 

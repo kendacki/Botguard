@@ -206,6 +206,7 @@ export default function SignedApp({
   onReject,
   feeStatus,
   feeBusy,
+  refundBusy,
   feeEscrowed,
   verificationFeeLabel,
   explorerTxUrl,
@@ -528,7 +529,7 @@ export default function SignedApp({
               ) : null}
               {feeStatus?.feeTxHash ? (
                 <div className="flex justify-between gap-3">
-                  <span className="text-mute">Fee tx</span>
+                  <span className="text-mute">{feeStatus?.feeStatus === "REFUNDED" ? "Refund tx" : "Fee tx"}</span>
                   {explorerTxUrl?.(feeStatus.feeTxHash) ? (
                     <a
                       className="font-mono font-medium text-brand underline-offset-2 hover:underline"
@@ -563,27 +564,29 @@ export default function SignedApp({
               <motion.button
                 type="button"
                 className="btn-primary h-11 w-full"
-                disabled={busy || feeBusy || feeEscrowed || feeStatus?.feeStatus === "SETTLED"}
+                disabled={busy || feeBusy || refundBusy || feeEscrowed || feeStatus?.feeStatus === "SETTLED"}
                 onClick={onPayFee}
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.99 }}
               >
                 {feeBusy
                     ? "Waiting on wallet…"
-                    : issuing
-                      ? "Minting your pass…"
-                      : feeEscrowed
-                        ? "Paid — finishing up…"
-                        : `Approve ${verificationFeeLabel || "0.5 BOT"}`}
+                    : refundBusy
+                      ? "Refunding…"
+                      : issuing
+                        ? "Minting your pass…"
+                        : feeEscrowed
+                          ? "Paid — finishing up…"
+                          : `Approve ${verificationFeeLabel || "0.5 BOT"}`}
               </motion.button>
-              {feeEscrowed ? (
+              {feeEscrowed && !refundBusy ? (
                 <button type="button" className="btn-ghost h-10 w-full text-xs" disabled={busy || feeBusy} onClick={onVerify}>
                   Try again
                 </button>
               ) : null}
               {feeEscrowed && !valid ? (
-                <button type="button" className="btn-muted h-10 w-full text-xs" disabled={busy || feeBusy} onClick={onReject}>
-                  Get a refund
+                <button type="button" className="btn-muted h-10 w-full text-xs" disabled={busy || feeBusy || refundBusy} onClick={onReject}>
+                  {refundBusy ? "Refunding…" : "Get a refund"}
                 </button>
               ) : null}
             </div>

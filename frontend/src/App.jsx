@@ -118,6 +118,7 @@ export default function App() {
   const [appView, setAppView] = useState("home");
   const [feeStatus, setFeeStatus] = useState(null);
   const [feeBusy, setFeeBusy] = useState(false);
+  const [refundBusy, setRefundBusy] = useState(false);
   const [verificationFee, setVerificationFee] = useState(parseEther("0.5").toString());
 
   const valid = Boolean(credential?.valid);
@@ -130,7 +131,7 @@ export default function App() {
     "function escrowedFee(address holder) view returns (uint256)",
   ];
 
-  async function loadFeeStatus(address = account) {
+  async function loadFeeStatus(address = account, { keepEscrowedOnError = true } = {}) {
     if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
       setFeeStatus(null);
       return null;
@@ -141,13 +142,14 @@ export default function App() {
       if (row.verificationFee) setVerificationFee(row.verificationFee);
       return row;
     } catch {
-      // Keep optimistic ESCROWED after pay if API briefly 404s (memory/indexer lag).
-      setFeeStatus((prev) =>
-        prev?.holderAddress?.toLowerCase() === address.toLowerCase() &&
-        prev?.feeStatus === "ESCROWED"
-          ? prev
-          : null
-      );
+      setFeeStatus((prev) => {
+        if (prev?.holderAddress?.toLowerCase() !== address.toLowerCase()) return null;
+        if (keepEscrowedOnError) return prev;
+        if (prev.feeStatus === "ESCROWED") {
+          return { ...prev, feeStatus: "REFUNDED", escrowed: false };
+        }
+        return prev;
+      });
       return null;
     }
   }
@@ -366,15 +368,15 @@ export default function App() {
     setBusy(true);
     try {
       const commitmentHash = keccak256(
-        toUtf8Bytes(`botguard:${account}:${tier}:${jurisdiction}:${Date.now()}`)
+        toUtf8Bytes(`botguard:${account}:${tier || "RETAIL"}:${jurisdiction || "NG"}:${Date.now()}`)
       );
       const accepted = await api("/verifications", {
         method: "POST",
         headers: { "X-BOTGUARD-Api-Key": DEMO_API_KEY },
         body: JSON.stringify({
           holderAddress: account,
-          tier,
-          jurisdiction,
+          tier: tier || "RETAIL",
+          jurisdiction: jurisdiction || "NG",
           commitmentHash,
           validityPeriodSeconds: 31536000,
         }),
@@ -474,23 +476,62 @@ export default function App() {
     setError("");
     setSuccess("");
     if (!account) return;
+    setRefundBusy(true);
     setBusy(true);
+    setSuccess("Refunding to this wallet…");
     try {
       const result = await api(`/verifications/${account}/reject`, {
         method: "POST",
         headers: { "X-BOTGUARD-Api-Key": DEMO_API_KEY },
         body: JSON.stringify({}),
       });
+      setVerification(null);
+      setVerificationId("");
+      setFeeStatus((prev) => ({
+        ...(prev || {}),
+        holderAddress: account,
+        feeStatus: "REFUNDED",
+        escrowed: false,
+        feeTxHash: result.txHash || prev?.feeTxHash || null,
+      }));
+      for (let i = 0; i < 6; i += 1) {
+        const row = await loadFeeStatus(account, { keepEscrowedOnError: false });
+        if (!row || row.feeStatus !== "ESCROWED") break;
+        await new Promise((resolve) => setTimeout(resolve, 900));
+      }
+      setFeeStatus((prev) => ({
+        ...(prev || {}),
+        holderAddress: account,
+        feeStatus: "REFUNDED",
+        escrowed: false,
+        feeTxHash: result.txHash || prev?.feeTxHash || null,
+      }));
+      setError("");
       setSuccess(
-        result.txHash
-          ? `Refund started (${shortAddr(result.txHash)}).`
-          : "Fee is on its way back to this wallet."
+        result.alreadyRefunded
+          ? "Fee is already back in this wallet. You can verify again."
+          : "Fee refunded. You can verify again."
       );
-      await loadFeeStatus(account);
     } catch (err) {
-      setError(err.message);
+      const msg = String(err?.message || "");
+      if (/NoFeeEscrowed/i.test(msg)) {
+        setVerification(null);
+        setVerificationId("");
+        setFeeStatus((prev) => ({
+          ...(prev || {}),
+          holderAddress: account,
+          feeStatus: "REFUNDED",
+          escrowed: false,
+        }));
+        setError("");
+        setSuccess("Fee is already back in this wallet. You can verify again.");
+      } else {
+        setSuccess("");
+        setError(err.message);
+      }
     } finally {
       setBusy(false);
+      setRefundBusy(false);
     }
   }
 
@@ -599,6 +640,7 @@ export default function App() {
           onReject={rejectVerificationRequest}
           feeStatus={feeStatus}
           feeBusy={feeBusy}
+          refundBusy={refundBusy}
           feeEscrowed={feeEscrowed}
           verificationFeeLabel={feeLabel}
           explorerTxUrl={explorerTxUrl}
