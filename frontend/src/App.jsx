@@ -4,12 +4,9 @@ import { BrowserProvider, Contract, keccak256, toUtf8Bytes, parseEther, formatEt
 import {
   ArrowRight,
   Copy,
-  FileSearch,
-  HelpCircle,
   LogOut,
   Minus,
   Plus,
-  ShieldCheck,
   Star,
   Wallet,
 } from "lucide-react";
@@ -156,12 +153,6 @@ export default function App() {
   }
 
   const feeLabel = `${formatEther(verificationFee)} BOT`;
-
-  const signedNav = [
-    { id: "verify", label: "Verify", icon: ShieldCheck },
-    { id: "status", label: "Status", icon: FileSearch },
-    { id: "help", label: "Help", icon: HelpCircle },
-  ];
 
   async function loadCredentialFor(address) {
     try {
@@ -566,11 +557,7 @@ export default function App() {
         }`}
       >
         <div
-          className={
-            connected
-              ? "mx-auto grid h-16 w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center px-4 md:px-6"
-              : "mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6"
-          }
+          className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6"
         >
           <button
             type="button"
@@ -578,55 +565,13 @@ export default function App() {
             onClick={() => (connected ? setAppView("home") : window.scrollTo({ top: 0, behavior: "smooth" }))}
           >
             <Logo className="h-8 w-8" />
-            <span className="text-[15px] font-bold tracking-tight">BOTGUARD</span>
+            {connected ? null : <span className="text-[15px] font-bold tracking-tight">BOTGUARD</span>}
           </button>
-          {connected ? (
-            <nav className="hidden items-center justify-center gap-1 text-sm font-medium md:flex">
-              {signedNav.map((item) => {
-                const Icon = item.icon;
-                const active = appView === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setAppView(item.id)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition ${
-                      active ? "bg-brand/10 text-brand" : "text-mute hover:text-ink"
-                    }`}
-                  >
-                    <Icon size={14} strokeWidth={2} />
-                    {item.label}
-                  </button>
-                );
-              })}
-            </nav>
-          ) : null}
           <button type="button" className="btn-primary justify-self-end" onClick={openWalletModal}>
             <Wallet size={16} />
             {connected ? shortAddr(account) : "Connect"}
           </button>
         </div>
-        {connected ? (
-          <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-3 md:hidden">
-            {signedNav.map((item) => {
-              const Icon = item.icon;
-              const active = appView === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setAppView(item.id)}
-                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-                    active ? "bg-brand/10 text-brand" : "text-mute"
-                  }`}
-                >
-                  <Icon size={14} strokeWidth={2} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
       </header>
 
       {connected ? (
