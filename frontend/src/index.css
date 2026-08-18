@@ -99,4 +99,16 @@ body {
   .dash-chip {
     @apply flex items-center gap-2 rounded-2xl border border-white/70 bg-white/50 px-3.5 py-3 text-left backdrop-blur-md;
   }
+
+  .dash-facts {
+    @apply overflow-hidden rounded-[22px] border border-black/[0.05] bg-white shadow-[0_10px_30px_rgba(20,16,30,0.05)];
+  }
+
+  .dash-fact {
+    @apply flex min-h-[4.5rem] items-center gap-3 bg-white px-4 py-3.5;
+  }
+
+  .dash-action {
+    @apply flex min-h-[3.5rem] w-full flex-col items-center justify-center gap-1.5 rounded-[18px] border border-black/[0.05] bg-white px-3 py-3 text-center shadow-[0_8px_24px_rgba(20,16,30,0.04)] transition hover:border-brand/25 hover:shadow-[0_10px_28px_rgba(138,63,252,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-60;
+  }
 }

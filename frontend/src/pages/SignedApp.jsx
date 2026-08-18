@@ -175,17 +175,34 @@ function NftPassCard({ nft, account, expiresAt, onAddWallet }) {
   );
 }
 
-function QuickAction({ icon: Icon, label, onClick }) {
+function Fact({ icon: Icon, label, value }) {
+  return (
+    <div className="dash-fact">
+      <span className="glass-icon h-9 w-9 shrink-0" aria-hidden="true">
+        <Icon size={16} strokeWidth={1.9} />
+      </span>
+      <div className="min-w-0">
+        <dt className="text-[11px] font-medium text-mute">{label}</dt>
+        <dd className="mt-0.5 truncate text-sm font-semibold text-ink">{value}</dd>
+      </div>
+    </div>
+  );
+}
+
+function QuickAction({ icon: Icon, label, onClick, busy = false, disabled = false }) {
   return (
     <motion.button
       type="button"
       onClick={onClick}
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.98 }}
-      className="dash-chip group flex-1 flex-col items-center justify-center gap-2 py-4 text-center sm:min-w-0"
+      disabled={disabled || busy}
+      aria-label={label}
+      aria-busy={busy || undefined}
+      whileHover={disabled || busy ? undefined : { y: -2 }}
+      whileTap={disabled || busy ? undefined : { scale: 0.98 }}
+      className="dash-action"
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand/10 text-brand transition group-hover:bg-brand group-hover:text-white">
-        <Icon size={18} strokeWidth={1.9} />
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand/10 text-brand" aria-hidden="true">
+        <Icon size={17} strokeWidth={1.9} className={busy ? "animate-spin" : ""} />
       </span>
       <span className="text-xs font-semibold text-ink">{label}</span>
     </motion.button>
@@ -386,51 +403,38 @@ export default function SignedApp({
             </div>
           </motion.section>
 
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-            <div className="dash-chip">
-              <span className="glass-icon h-8 w-8 shrink-0">
-                <Layers3 size={14} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-mute">Tier</p>
-                <p className="truncate text-sm font-semibold text-ink">{prettyTier(credential?.tier) || "—"}</p>
-              </div>
-            </div>
-            <div className="dash-chip">
-              <span className="glass-icon h-8 w-8 shrink-0">
-                <Globe2 size={14} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-mute">Region</p>
-                <p className="truncate text-sm font-semibold text-ink">{credential?.jurisdiction || "—"}</p>
-              </div>
-            </div>
-            <div className="dash-chip">
-              <span className="glass-icon h-8 w-8 shrink-0">
-                <Lock size={14} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-mute">Personal data</p>
-                <p className="truncate text-sm font-semibold text-ink">Off-chain</p>
-              </div>
-            </div>
-            <div className="dash-chip">
-              <span className="glass-icon h-8 w-8 shrink-0">
-                <Sparkles size={14} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-mute">Badge</p>
-                <p className="truncate text-sm font-semibold text-ink">{credential?.nft ? "Minted" : "Not yet"}</p>
-              </div>
-            </div>
-          </div>
+          <section className="dash-facts" aria-labelledby="pass-facts-heading">
+            <h2 id="pass-facts-heading" className="border-b border-black/[0.05] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">
+              On this pass
+            </h2>
+            <dl className="grid grid-cols-2 gap-px bg-black/[0.05] sm:grid-cols-4">
+              <Fact icon={Layers3} label="Tier" value={prettyTier(credential?.tier) || "—"} />
+              <Fact icon={Globe2} label="Region" value={credential?.jurisdiction || "—"} />
+              <Fact icon={Lock} label="Personal data" value="Off-chain" />
+              <Fact icon={Sparkles} label="Badge" value={valid || credential?.nft ? "Minted" : "Not yet"} />
+            </dl>
+          </section>
 
-          <div className="flex gap-2.5">
-            <QuickAction icon={valid ? CheckCircle2 : ShieldCheck} label={valid ? "Pass" : "Get pass"} onClick={() => setView("verify")} />
-            <QuickAction icon={FileSearch} label="Details" onClick={() => setView("status")} />
-            <QuickAction icon={RefreshCw} label="Sync" onClick={onRefresh} />
-            <QuickAction icon={HelpCircle} label="Help" onClick={() => setView("help")} />
-          </div>
+          <nav aria-label="Pass actions">
+            <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              <li>
+                <QuickAction
+                  icon={valid ? CheckCircle2 : ShieldCheck}
+                  label={valid ? "View pass" : "Get pass"}
+                  onClick={() => setView("verify")}
+                />
+              </li>
+              <li>
+                <QuickAction icon={FileSearch} label="Details" onClick={() => setView("status")} />
+              </li>
+              <li>
+                <QuickAction icon={RefreshCw} label="Sync" onClick={onRefresh} busy={busy} />
+              </li>
+              <li>
+                <QuickAction icon={HelpCircle} label="Help" onClick={() => setView("help")} />
+              </li>
+            </ul>
+          </nav>
         </motion.div>
       </main>
 
