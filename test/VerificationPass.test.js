@@ -36,6 +36,14 @@ describe("VerificationPass", function () {
 
     const uri = await pass.tokenURI(tokenId);
     expect(uri.startsWith("data:application/json;base64,")).to.equal(true);
+    const json = JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString("utf8"));
+    expect(json.image.startsWith("data:image/svg+xml;base64,")).to.equal(true);
+    const svg = Buffer.from(json.image.split(",")[1], "base64").toString("utf8");
+    expect(svg).to.include("BOTGUARD");
+    expect(svg).to.include("Retail");
+    expect(svg).to.include("NG");
+    expect(svg.toLowerCase()).to.include(alice.address.slice(2, 6).toLowerCase());
+    expect(svg.toLowerCase()).to.include(alice.address.slice(-4).toLowerCase());
   });
 
   it("refreshes the same token on re-verification instead of minting another", async function () {

@@ -19,9 +19,10 @@ import {
 } from "lucide-react";
 import Alert from "../components/Alert.jsx";
 import Modal from "../components/Modal.jsx";
-import { ArtIdle, ArtLive } from "../components/DashArt.jsx";
+import { ArtIdle } from "../components/DashArt.jsx";
 import { shortAddr } from "../lib/api.js";
-import { explorerAddressUrl } from "../lib/chain.js";
+import { explorerAddressUrl, explorerNftUrl, VERIFICATION_PASS_ADDRESS } from "../lib/chain.js";
+import { passBadgeDataUrl } from "../lib/passBadge.js";
 
 const helpItems = [
   {
@@ -41,6 +42,10 @@ const helpItems = [
     a: "A unique, non-transferable badge on this address. It shows the kind of check you completed — Retail, Accredited, or Institutional.",
   },
   {
+    q: "Where do I see the NFT?",
+    a: "After minting, open See your pass and tap Add to wallet. It should appear under NFTs in MetaMask on BOT Chain. You can also open it on the explorer from that same card.",
+  },
+  {
     q: "When do I need to come back?",
     a: "If the pass expires, or if you want a different tier or region. Refresh anytime to see what's live.",
   },
@@ -49,15 +54,6 @@ const helpItems = [
 function prettyTier(value) {
   const key = String(value || "").toUpperCase();
   return { RETAIL: "Retail", ACCREDITED: "Accredited", INSTITUTIONAL: "Institutional" }[key] || value || null;
-}
-
-function decodePassMeta(tokenURI) {
-  if (!tokenURI || !tokenURI.startsWith("data:application/json;base64,")) return null;
-  try {
-    return JSON.parse(atob(tokenURI.slice("data:application/json;base64,".length)));
-  } catch {
-    return null;
-  }
 }
 
 function formatExpiry(iso) {
@@ -72,7 +68,7 @@ function formatExpiry(iso) {
 }
 
 function passLabel({ valid, verification, feeEscrowed }) {
-  if (valid) return "Ready";
+  if (valid) return "Live";
   if (verification?.status === "FAILED") return "Try again";
   if (["PENDING", "IN_REVIEW", "SIGNED", "SUBMITTED"].includes(verification?.status)) {
     return "Minting";
@@ -133,17 +129,20 @@ function FlowStep({ n, title, done, current }) {
   );
 }
 
-function NftPassCard({ nft }) {
+function NftPassCard({ nft, account, expiresAt, onAddWallet }) {
   if (!nft) return null;
-  const meta = decodePassMeta(nft.tokenURI);
-  const href = explorerAddressUrl(nft.address);
+  const src = passBadgeDataUrl({
+    account,
+    tier: prettyTier(nft.tier) || "Pass",
+    jurisdiction: nft.jurisdiction,
+    expiresAt,
+  });
+  const passAddress = nft.address || VERIFICATION_PASS_ADDRESS;
+  const tokenId = nft.tokenId || (account ? BigInt(account).toString() : "");
+  const nftHref = explorerNftUrl(passAddress, tokenId) || explorerAddressUrl(passAddress);
   return (
     <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/50 bg-white/35 px-3.5 py-3">
-      {meta?.image ? (
-        <img src={meta.image} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-white/80" />
-      ) : (
-        <span className="glass-icon h-14 w-14 shrink-0 text-sm font-bold">BGV</span>
-      )}
+      <img src={src} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-white/80" />
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-medium uppercase tracking-wide text-white/70">Your badge</p>
         <p className="mt-0.5 truncate text-sm font-semibold text-white">
@@ -151,16 +150,27 @@ function NftPassCard({ nft }) {
           {nft.jurisdiction ? ` · ${nft.jurisdiction}` : ""}
         </p>
       </div>
-      {href ? (
-        <a
-          className="inline-flex items-center gap-1 text-xs font-medium text-white/90 underline-offset-2 hover:underline"
-          href={href}
-          target="_blank"
-          rel="noreferrer"
-        >
-          View <ExternalLink size={11} />
-        </a>
-      ) : null}
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        {onAddWallet ? (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 text-xs font-medium text-white/90 underline-offset-2 hover:underline"
+            onClick={onAddWallet}
+          >
+            Add to wallet
+          </button>
+        ) : null}
+        {nftHref ? (
+          <a
+            className="inline-flex items-center gap-1 text-xs font-medium text-white/90 underline-offset-2 hover:underline"
+            href={nftHref}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Explorer <ExternalLink size={11} />
+          </a>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -212,13 +222,19 @@ export default function SignedApp({
   explorerTxUrl,
   onRefresh,
   onRevoke,
+  onAddWallet,
 }) {
   const openedVerifyOnce = useRef(false);
   const [copied, setCopied] = useState(false);
   const issuing = ["PENDING", "IN_REVIEW", "SIGNED", "SUBMITTED"].includes(verification?.status);
   const closeSheet = () => setView("home");
   const label = passLabel({ valid, verification, feeEscrowed });
-  const nftMeta = decodePassMeta(credential?.nft?.tokenURI);
+  const badgeSrc = passBadgeDataUrl({
+    account,
+    tier: prettyTier(credential?.tier || credential?.nft?.tier) || "Pass",
+    jurisdiction: credential?.jurisdiction || credential?.nft?.jurisdiction,
+    expiresAt: credential?.expiresAt,
+  });
 
   useEffect(() => {
     if (openedVerifyOnce.current || valid || credential) return undefined;
@@ -249,10 +265,10 @@ export default function SignedApp({
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand">
-                {valid ? "Ready" : "Your pass"}
-              </p>
-              <h1 className="mt-1.5 text-[1.65rem] font-semibold tracking-tight text-ink sm:text-3xl">
+              {valid ? null : (
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand">Your pass</p>
+              )}
+              <h1 className={`text-[1.65rem] font-semibold tracking-tight text-ink sm:text-3xl ${valid ? "" : "mt-1.5"}`}>
                 {valid ? "You're cleared." : "Verify once. Use it everywhere."}
               </h1>
               <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-mute">
@@ -284,10 +300,8 @@ export default function SignedApp({
                   valid ? "bg-white/15 ring-1 ring-white/25" : "bg-brand/8 ring-1 ring-brand/10"
                 }`}
               >
-                {valid && nftMeta?.image ? (
-                  <img src={nftMeta.image} alt="" className="h-full w-full object-cover" />
-                ) : valid ? (
-                  <ArtLive className="h-[88px] w-[88px]" />
+                {valid ? (
+                  <img src={badgeSrc} alt="BOTGUARD verification badge" className="h-full w-full object-cover" />
                 ) : (
                   <ArtIdle className="h-[108px] w-[108px]" />
                 )}
@@ -340,7 +354,14 @@ export default function SignedApp({
                   </div>
                 </div>
 
-                {valid ? <NftPassCard nft={credential.nft} /> : null}
+                {valid ? (
+                  <NftPassCard
+                    nft={credential?.nft || { tier: credential?.tier, jurisdiction: credential?.jurisdiction }}
+                    account={account}
+                    expiresAt={credential?.expiresAt}
+                    onAddWallet={onAddWallet}
+                  />
+                ) : null}
 
                 <motion.button
                   type="button"
@@ -496,9 +517,14 @@ export default function SignedApp({
             </p>
           </div>
 
-          {valid && credential?.nft ? (
+          {valid ? (
             <div className="rounded-2xl bg-brand p-3">
-              <NftPassCard nft={credential.nft} />
+              <NftPassCard
+                nft={credential?.nft || { tier: credential?.tier, jurisdiction: credential?.jurisdiction }}
+                account={account}
+                expiresAt={credential?.expiresAt}
+                onAddWallet={onAddWallet}
+              />
             </div>
           ) : null}
 

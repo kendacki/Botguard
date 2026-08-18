@@ -18,6 +18,16 @@ export function explorerAddressUrl(address) {
   return `${BOT_CHAIN.explorer}/address/${address}`;
 }
 
+export function explorerNftUrl(address, tokenId) {
+  if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address) || tokenId == null || tokenId === "") {
+    return null;
+  }
+  return `${BOT_CHAIN.explorer}/token/${address}/instance/${tokenId}`;
+}
+
+export const VERIFICATION_PASS_ADDRESS =
+  import.meta.env.VITE_VERIFICATION_PASS_ADDRESS || "0x3e01dC32E7c3dCC9D43bEe186A73575004cd818E";
+
 /** Switch wallet to BOT Chain Testnet; add the network if missing. */
 export async function ensureBotChain(ethereum = window.ethereum) {
   if (!ethereum?.request) {

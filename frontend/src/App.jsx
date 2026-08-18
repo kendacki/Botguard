@@ -15,7 +15,7 @@ import Modal from "./components/Modal.jsx";
 import Alert from "./components/Alert.jsx";
 import SignedApp from "./pages/SignedApp.jsx";
 import { api, DEMO_API_KEY, shortAddr } from "./lib/api.js";
-import { BOT_CHAIN, ensureBotChain, explorerTxUrl } from "./lib/chain.js";
+import { BOT_CHAIN, ensureBotChain, explorerTxUrl, VERIFICATION_PASS_ADDRESS } from "./lib/chain.js";
 
 const easeOut = [0.22, 1, 0.36, 1];
 const heroContainer = {
@@ -570,6 +570,50 @@ export default function App() {
     }
   }
 
+  async function addPassToWallet() {
+    setError("");
+    setSuccess("");
+    if (!account) return;
+    const tokenId = credential?.nft?.tokenId || BigInt(account).toString();
+    let passAddress = credential?.nft?.address || VERIFICATION_PASS_ADDRESS;
+    if (!passAddress) {
+      try {
+        const dep = await fetch("/deployments/botchainTestnet.json").then((r) => (r.ok ? r.json() : null));
+        passAddress = dep?.contracts?.VerificationPass || dep?.env?.VERIFICATION_PASS_ADDRESS;
+      } catch {
+        passAddress = null;
+      }
+    }
+    if (!passAddress) {
+      setError("Badge contract address not found.");
+      return;
+    }
+    if (!window.ethereum?.request) {
+      setError("Open your wallet NFTs tab and import this contract.");
+      return;
+    }
+    try {
+      await ensureBotChain(window.ethereum);
+      const added = await window.ethereum.request({
+        method: "wallet_watchAsset",
+        params: {
+          type: "ERC721",
+          options: {
+            address: passAddress,
+            tokenId: String(tokenId),
+          },
+        },
+      });
+      setSuccess(added === false ? "If it didn’t appear, import it from the explorer link." : "Badge added. Check NFTs in your wallet.");
+    } catch (err) {
+      if (err?.code === 4001) {
+        setError("Wallet declined the badge import.");
+        return;
+      }
+      setError(err?.shortMessage || err?.message || "Could not add the badge. Use the explorer link.");
+    }
+  }
+
   async function revokeCredential() {
     setError("");
     setSuccess("");
@@ -646,6 +690,7 @@ export default function App() {
           explorerTxUrl={explorerTxUrl}
           onRefresh={refreshCredential}
           onRevoke={revokeCredential}
+          onAddWallet={addPassToWallet}
         />
       ) : (
       <>

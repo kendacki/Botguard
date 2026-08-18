@@ -184,31 +184,22 @@ contract VerificationPass is Ownable, IERC165 {
         Pass memory p = passes[tokenId];
         string memory tierName = _tierName(p.tier);
         string memory region = _bytes2ToString(p.jurisdiction);
-        string memory svg = string.concat(
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480">',
-            '<rect width="480" height="480" rx="40" fill="#8A3FFC"/>',
-            '<rect x="24" y="24" width="432" height="432" rx="28" fill="#F7F6F3"/>',
-            '<text x="240" y="120" text-anchor="middle" font-family="Arial" font-size="22" fill="#8A3FFC">BOTGUARD</text>',
-            '<text x="240" y="210" text-anchor="middle" font-family="Arial" font-size="36" font-weight="700" fill="#1A1A1A">',
-            tierName,
-            "</text>",
-            '<text x="240" y="258" text-anchor="middle" font-family="Arial" font-size="18" fill="#6B6570">',
-            region,
-            " verification</text>",
-            '<text x="240" y="340" text-anchor="middle" font-family="Arial" font-size="14" fill="#8A3FFC">Soulbound pass</text>',
-            "</svg>"
-        );
+        string memory wallet = _shortWallet(tokenId);
+        string memory svg = _passSvg(tokenId, tierName, region, wallet);
         string memory json = string.concat(
             '{"name":"BOTGUARD ',
             tierName,
-            " Pass (",
+            " - ",
             region,
-            ')","description":"Unique soulbound verification pass tied to one BOT Chain wallet. Records verification kind only - no personal data.","attributes":[',
+            '","description":"Soulbound BGV badge for one BOT Chain wallet. Tier and region only - no personal data.","background_color":"8A3FFC","attributes":[',
             '{"trait_type":"Tier","value":"',
             tierName,
             '"},',
-            '{"trait_type":"Jurisdiction","value":"',
+            '{"trait_type":"Region","value":"',
             region,
+            '"},',
+            '{"trait_type":"Wallet","value":"',
+            wallet,
             '"},',
             '{"trait_type":"Soulbound","value":"true"},',
             '{"trait_type":"Expires","display_type":"date","value":',
@@ -219,6 +210,84 @@ contract VerificationPass is Ownable, IERC165 {
             '"}'
         );
         return string.concat("data:application/json;base64,", _encodeBase64(bytes(json)));
+    }
+
+    function _passSvg(
+        uint256 tokenId,
+        string memory tierName,
+        string memory region,
+        string memory wallet
+    ) internal pure returns (string memory) {
+        uint160 a = uint160(tokenId);
+        uint256 x1 = 28 + (uint256(uint8(a >> 152)) % 200);
+        uint256 y1 = 18 + (uint256(uint8(a >> 144)) % 70);
+        uint256 r1 = 42 + (uint256(uint8(a >> 136)) % 70);
+        uint256 x2 = 160 + (uint256(uint8(a >> 128)) % 160);
+        uint256 y2 = 210 + (uint256(uint8(a >> 120)) % 90);
+        uint256 r2 = 28 + (uint256(uint8(a >> 112)) % 56);
+        uint256 x3 = 24 + (uint256(uint8(a >> 104)) % 250);
+        uint256 y3 = 268 + (uint256(uint8(a >> 96)) % 56);
+        string memory deco = string.concat(
+            '<circle cx="',
+            _uToString(x1),
+            '" cy="',
+            _uToString(y1),
+            '" r="',
+            _uToString(r1),
+            '" fill="#C4A6FF" opacity="0.38"/>',
+            '<circle cx="',
+            _uToString(x2),
+            '" cy="',
+            _uToString(y2),
+            '" r="',
+            _uToString(r2),
+            '" fill="#5B21B6" opacity="0.28"/>',
+            '<circle cx="',
+            _uToString(x3),
+            '" cy="',
+            _uToString(y3),
+            '" r="18" fill="#FF5A5F" opacity="0.55"/>'
+        );
+        return string.concat(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360">',
+            '<rect width="360" height="360" rx="32" fill="#8A3FFC"/>',
+            deco,
+            '<rect x="26" y="26" width="308" height="308" rx="24" fill="#F7F6F3"/>',
+            '<circle cx="180" cy="132" r="46" fill="#8A3FFC"/>',
+            '<circle cx="180" cy="132" r="26" fill="#F7F6F3"/>',
+            '<path d="M180 116v16l11 7" fill="none" stroke="#8A3FFC" stroke-width="4" stroke-linecap="round"/>',
+            '<text x="180" y="208" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" letter-spacing="2" fill="#8A3FFC">BOTGUARD</text>',
+            '<text x="180" y="244" text-anchor="middle" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="#1A1A1A">',
+            tierName,
+            "</text>",
+            '<text x="180" y="270" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#6B6B6B">',
+            region,
+            " - BGV</text>",
+            '<text x="180" y="302" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#8A3FFC">',
+            wallet,
+            "</text>",
+            "</svg>"
+        );
+    }
+
+    function _shortWallet(uint256 tokenId) internal pure returns (string memory) {
+        uint160 a = uint160(tokenId);
+        return string.concat(
+            "0x",
+            _hexByte(uint8(a >> 152)),
+            _hexByte(uint8(a >> 144)),
+            "..",
+            _hexByte(uint8(a >> 8)),
+            _hexByte(uint8(a))
+        );
+    }
+
+    function _hexByte(uint8 value) internal pure returns (string memory) {
+        bytes memory hexChars = "0123456789abcdef";
+        bytes memory out = new bytes(2);
+        out[0] = hexChars[value >> 4];
+        out[1] = hexChars[value & 15];
+        return string(out);
     }
 
     function _tierName(InvestorTier tier) internal pure returns (string memory) {
