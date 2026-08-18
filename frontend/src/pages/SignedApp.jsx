@@ -363,7 +363,7 @@ export default function SignedApp({
                   <Copy size={12} />
                 </button>
 
-                <div className={`mt-4 grid grid-cols-3 gap-2 text-[11px] ${valid ? "text-white/80" : "text-mute"}`}>
+                <div className={`mt-4 grid gap-2 text-[11px] ${valid ? "grid-cols-2 text-white/80" : "grid-cols-3 text-mute"}`}>
                   <div>
                     <p className="font-medium opacity-80">Network</p>
                     <p className={`mt-0.5 truncate text-sm font-semibold ${valid ? "text-white" : "text-ink"}`}>
@@ -376,12 +376,14 @@ export default function SignedApp({
                       {formatExpiry(credential?.expiresAt)}
                     </p>
                   </div>
+                  {valid ? null : (
                   <div>
                     <p className="font-medium opacity-80">Identity</p>
-                    <p className={`mt-0.5 truncate text-sm font-semibold ${valid ? "text-white" : "text-ink"}`}>
+                    <p className="mt-0.5 truncate text-sm font-semibold text-ink">
                       Stays off-chain
                     </p>
                   </div>
+                  )}
                 </div>
 
                 {valid ? (
