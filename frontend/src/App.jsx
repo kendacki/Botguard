@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { BrowserProvider, Contract, keccak256, toUtf8Bytes, parseEther, formatEther } from "ethers";
+import { BrowserProvider, Contract, keccak256, toUtf8Bytes, parseEther, formatEther, getAddress } from "ethers";
 import {
   ArrowRight,
   Copy,
@@ -15,7 +15,7 @@ import Modal from "./components/Modal.jsx";
 import Alert from "./components/Alert.jsx";
 import SignedApp from "./pages/SignedApp.jsx";
 import { api, DEMO_API_KEY, shortAddr } from "./lib/api.js";
-import { BOT_CHAIN, ensureBotChain, explorerTxUrl, VERIFICATION_PASS_ADDRESS } from "./lib/chain.js";
+import { BOT_CHAIN, ensureBotChain, waitForBotChain, explorerTxUrl, explorerAddressUrl, VERIFICATION_PASS_ADDRESS } from "./lib/chain.js";
 
 const easeOut = [0.22, 1, 0.36, 1];
 const heroContainer = {
@@ -597,7 +597,7 @@ export default function App() {
     setError("");
     setSuccess("");
     if (!account) return;
-    const tokenId = credential?.nft?.tokenId || BigInt(account).toString();
+    const tokenId = String(credential?.nft?.tokenId || BigInt(account).toString());
     let passAddress = credential?.nft?.address || VERIFICATION_PASS_ADDRESS;
     if (!passAddress) {
       try {
@@ -615,25 +615,61 @@ export default function App() {
       setError("Open your wallet NFTs tab and import this contract.");
       return;
     }
+
+    const checksum = getAddress(passAddress);
+    const importText = `Network: ${BOT_CHAIN.name} (${BOT_CHAIN.chainId})\nContract: ${checksum}\nToken ID: ${tokenId}`;
+    const explorer = explorerAddressUrl(checksum);
+
+    async function fallbackImport(message) {
+      try {
+        await navigator.clipboard.writeText(importText);
+      } catch {
+        /* ignore */
+      }
+      if (explorer) window.open(explorer, "_blank", "noopener,noreferrer");
+      setSuccess(message);
+    }
+
     try {
-      await ensureBotChain(window.ethereum);
-      const added = await window.ethereum.request({
-        method: "wallet_watchAsset",
-        params: {
-          type: "ERC721",
-          options: {
-            address: passAddress,
-            tokenId: String(tokenId),
-          },
-        },
-      });
-      setSuccess(added === false ? "If it didn’t appear, import it from the explorer link." : "Badge added. Check NFTs in your wallet.");
-    } catch (err) {
-      if (err?.code === 4001) {
-        setError("Wallet declined the badge import.");
+      await waitForBotChain(window.ethereum);
+      const provider = new BrowserProvider(window.ethereum);
+      const nft = new Contract(checksum, ["function ownerOf(uint256 tokenId) view returns (address)"], provider);
+      let owner = null;
+      try {
+        owner = await nft.ownerOf(tokenId);
+      } catch {
+        await fallbackImport("This wallet can’t verify the badge on the current network. Contract and token ID are copied — import NFT in MetaMask on BOT Chain Testnet.");
         return;
       }
-      setError(err?.shortMessage || err?.message || "Could not add the badge. Use the explorer link.");
+      if (owner && owner.toLowerCase() !== account.toLowerCase()) {
+        await fallbackImport("This badge isn’t on the connected wallet. Contract and token ID are copied.");
+        return;
+      }
+
+      const options = { address: checksum, tokenId, symbol: "BGV" };
+      try {
+        const added = await window.ethereum.request({
+          method: "wallet_watchAsset",
+          params: { type: "ERC721", options },
+        });
+        if (added === false) {
+          await fallbackImport("If it didn’t appear, paste the copied contract and token ID in MetaMask → NFTs → Import NFT.");
+          return;
+        }
+        setSuccess("Badge added. Check NFTs in your wallet.");
+      } catch (watchErr) {
+        if (watchErr?.code === 4001) {
+          setError("Wallet declined the badge import.");
+          return;
+        }
+        await fallbackImport("Wallet couldn’t auto-import this soulbound badge. Contract and token ID are copied — MetaMask → NFTs → Import NFT, on BOT Chain Testnet.");
+      }
+    } catch (err) {
+      if (err?.code === 4001) {
+        setError("Wallet declined the network switch.");
+        return;
+      }
+      setError(err?.shortMessage || err?.message || "Could not add the badge.");
     }
   }
 

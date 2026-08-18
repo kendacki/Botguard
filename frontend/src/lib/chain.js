@@ -9,20 +9,18 @@ export const BOT_CHAIN = {
 };
 
 export function explorerTxUrl(txHash) {
-  if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) return null;
-  return `${BOT_CHAIN.explorer}/tx/${txHash}`;
+  const hash = String(txHash || "").trim().toLowerCase();
+  if (!/^0x[a-f0-9]{64}$/.test(hash)) return null;
+  return `${BOT_CHAIN.explorer}/tx/${hash}`;
 }
 
 export function explorerAddressUrl(address) {
   if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) return null;
-  return `${BOT_CHAIN.explorer}/address/${address}`;
+  return `${BOT_CHAIN.explorer}/address/${address.toLowerCase()}`;
 }
 
-export function explorerNftUrl(address, tokenId) {
-  if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address) || tokenId == null || tokenId === "") {
-    return null;
-  }
-  return `${BOT_CHAIN.explorer}/token/${address}/instance/${tokenId}`;
+export function explorerNftUrl(address) {
+  return explorerAddressUrl(address);
 }
 
 export const VERIFICATION_PASS_ADDRESS =
@@ -57,4 +55,15 @@ export async function ensureBotChain(ethereum = window.ethereum) {
     }
     throw err;
   }
+}
+
+export async function waitForBotChain(ethereum = window.ethereum, timeoutMs = 10000) {
+  await ensureBotChain(ethereum);
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const hexId = await ethereum.request({ method: "eth_chainId" });
+    if (Number.parseInt(String(hexId), 16) === BOT_CHAIN.chainId) return;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error(`Switch your wallet to ${BOT_CHAIN.name} (chain ${BOT_CHAIN.chainId}).`);
 }
