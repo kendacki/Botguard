@@ -336,25 +336,23 @@ export default function SignedApp({
               </div>
 
               <div className="min-w-0 flex-1">
+                {valid ? null : (
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    {valid ? null : (
                     <p className="text-[11px] font-medium uppercase tracking-wide text-mute">
                       This wallet
                     </p>
-                    )}
-                    <p className={`${valid ? "" : "mt-1 "}text-xl font-semibold tracking-tight ${valid ? "text-white" : "text-ink"}`}>
-                      {valid
-                        ? `${prettyTier(credential?.nft?.tier || credential?.tier) || "Retail"}${region ? ` · ${region}` : ""}`
-                        : "Not verified yet"}
+                    <p className="mt-1 text-xl font-semibold tracking-tight text-ink">
+                      Not verified yet
                     </p>
                   </div>
                 </div>
+                )}
 
                 <button
                   type="button"
                   onClick={copyWallet}
-                  className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                  className={`${valid ? "" : "mt-3 "}inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                     valid ? "bg-white/15 text-white hover:bg-white/25" : "bg-white/70 text-ink hover:bg-white"
                   }`}
                 >
