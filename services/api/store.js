@@ -16,6 +16,15 @@ function normalizeTier(tier) {
   return TIER_TO_NUM[key];
 }
 
+function normalizeJurisdiction(value) {
+  const code = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "")
+    .slice(0, 2);
+  return /^[A-Z]{2}$/.test(code) ? code : null;
+}
+
 function tierLabel(tier) {
   return NUM_TO_TIER[Number(tier)] || null;
 }
@@ -76,7 +85,7 @@ async function createVerification({
       status: "PENDING",
       tier: tierNum,
       tierLabel: tierLabel(tierNum),
-      jurisdiction: jurisdiction || null,
+      jurisdiction: normalizeJurisdiction(jurisdiction),
       commitmentHash: commitmentHash || null,
       validityPeriodSeconds: validityPeriodSeconds || 31536000,
       txHash: null,
@@ -93,7 +102,7 @@ async function createVerification({
     `INSERT INTO verification_requests
       (request_id, holder_address, issuer_address, status, requested_tier, jurisdiction, commitment_hash)
      VALUES ($1,$2,$3,'PENDING',$4,$5,$6)`,
-    [requestId, holderAddress, issuerAddress, tierNum, jurisdiction || null, commitmentHash || null]
+    [requestId, holderAddress, issuerAddress, tierNum, normalizeJurisdiction(jurisdiction), commitmentHash || null]
   );
   return {
     requestId,
@@ -102,7 +111,7 @@ async function createVerification({
     status: "PENDING",
     tier: tierNum,
     tierLabel: tierLabel(tierNum),
-    jurisdiction,
+    jurisdiction: normalizeJurisdiction(jurisdiction),
     commitmentHash,
     validityPeriodSeconds,
     estimatedSeconds,
@@ -430,6 +439,7 @@ module.exports = {
   upsertFeeStatus,
   getFeeStatus,
   normalizeTier,
+  normalizeJurisdiction,
   tierLabel,
   commitmentHashFallback,
   TIER_TO_NUM,

@@ -158,7 +158,15 @@ export default function App() {
 
   async function loadCredentialFor(address) {
     try {
-      setCredential(await api(`/credentials/${address}`));
+      const cred = await api(`/credentials/${address}`);
+      setCredential(cred);
+      const region = String(cred?.nft?.jurisdiction || cred?.jurisdiction || "")
+        .toUpperCase()
+        .replace(/[^A-Z]/g, "")
+        .slice(0, 2);
+      if (/^[A-Z]{2}$/.test(region)) setJurisdiction(region);
+      const tierKey = String(cred?.nft?.tier || cred?.tier || "").toUpperCase();
+      if (["RETAIL", "ACCREDITED", "INSTITUTIONAL"].includes(tierKey)) setTier(tierKey);
     } catch {
       setCredential(null);
     }
@@ -350,7 +358,7 @@ export default function App() {
     setSuccess("");
   }
 
-  async function issueCredential({ skipFeeCheck = false } = {}) {
+  async function issueCredential({ skipFeeCheck = false, selectedTier = tier, selectedRegion = jurisdiction } = {}) {
     setError("");
     setSuccess("");
     if (!account) {
@@ -361,6 +369,12 @@ export default function App() {
       setError("Enter a valid 0x address.");
       return;
     }
+    const region = String(selectedRegion || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2);
+    if (!/^[A-Z]{2}$/.test(region)) {
+      setError("Pick a region first.");
+      return;
+    }
+    const chosenTier = selectedTier || "RETAIL";
     if (!skipFeeCheck && !feeEscrowed) {
       setError(`Pay ${feeLabel} first — it comes from this wallet.`);
       return;
@@ -368,15 +382,15 @@ export default function App() {
     setBusy(true);
     try {
       const commitmentHash = keccak256(
-        toUtf8Bytes(`botguard:${account}:${tier || "RETAIL"}:${jurisdiction || "NG"}:${Date.now()}`)
+        toUtf8Bytes(`botguard:${account}:${chosenTier}:${region}:${Date.now()}`)
       );
       const accepted = await api("/verifications", {
         method: "POST",
         headers: { "X-BOTGUARD-Api-Key": DEMO_API_KEY },
         body: JSON.stringify({
           holderAddress: account,
-          tier: tier || "RETAIL",
-          jurisdiction: jurisdiction || "NG",
+          tier: chosenTier,
+          jurisdiction: region,
           commitmentHash,
           validityPeriodSeconds: 31536000,
         }),
@@ -399,6 +413,8 @@ export default function App() {
   async function payVerificationFee() {
     setError("");
     setSuccess("");
+    const selectedTier = tier;
+    const selectedRegion = jurisdiction;
     if (!window.ethereum) {
       setError("Connect a wallet, then approve the fee.");
       return;
@@ -464,7 +480,7 @@ export default function App() {
       });
       setSuccess("Paid. Minting your pass…");
       await loadFeeStatus(account);
-      await issueCredential({ skipFeeCheck: true });
+      await issueCredential({ skipFeeCheck: true, selectedTier, selectedRegion });
     } catch (err) {
       setError(err?.shortMessage || err.message || "Fee payment failed");
     } finally {
@@ -547,6 +563,13 @@ export default function App() {
       try {
         const cred = await api(`/credentials/${account}`);
         setCredential(cred);
+        const region = String(cred?.nft?.jurisdiction || cred?.jurisdiction || "")
+          .toUpperCase()
+          .replace(/[^A-Z]/g, "")
+          .slice(0, 2);
+        if (/^[A-Z]{2}$/.test(region)) setJurisdiction(region);
+        const tierKey = String(cred?.nft?.tier || cred?.tier || "").toUpperCase();
+        if (["RETAIL", "ACCREDITED", "INSTITUTIONAL"].includes(tierKey)) setTier(tierKey);
         setSuccess("You’re up to date.");
         return;
       } catch (err) {

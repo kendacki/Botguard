@@ -51,6 +51,12 @@ const helpItems = [
   },
 ];
 
+function issuedRegion(credential, fallback) {
+  const raw = credential?.nft?.jurisdiction || credential?.jurisdiction || fallback || "";
+  const code = String(raw).toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2);
+  return /^[A-Z]{2}$/.test(code) ? code : null;
+}
+
 function prettyTier(value) {
   const key = String(value || "").toUpperCase();
   return { RETAIL: "Retail", ACCREDITED: "Accredited", INSTITUTIONAL: "Institutional" }[key] || value || null;
@@ -246,10 +252,11 @@ export default function SignedApp({
   const issuing = ["PENDING", "IN_REVIEW", "SIGNED", "SUBMITTED"].includes(verification?.status);
   const closeSheet = () => setView("home");
   const label = passLabel({ valid, verification, feeEscrowed });
+  const region = issuedRegion(credential, valid ? null : jurisdiction);
   const badgeSrc = passBadgeDataUrl({
     account,
-    tier: prettyTier(credential?.tier || credential?.nft?.tier) || "Pass",
-    jurisdiction: credential?.jurisdiction || credential?.nft?.jurisdiction,
+    tier: prettyTier(credential?.nft?.tier || credential?.tier) || "Pass",
+    jurisdiction: region,
     expiresAt: credential?.expiresAt,
   });
 
@@ -332,7 +339,7 @@ export default function SignedApp({
                     </p>
                     <p className={`mt-1 text-xl font-semibold tracking-tight ${valid ? "text-white" : "text-ink"}`}>
                       {valid
-                        ? `${prettyTier(credential?.tier) || "Retail"}${credential?.jurisdiction ? ` · ${credential.jurisdiction}` : ""}`
+                        ? `${prettyTier(credential?.nft?.tier || credential?.tier) || "Retail"}${region ? ` · ${region}` : ""}`
                         : "Not verified yet"}
                     </p>
                   </div>
@@ -373,7 +380,11 @@ export default function SignedApp({
 
                 {valid ? (
                   <NftPassCard
-                    nft={credential?.nft || { tier: credential?.tier, jurisdiction: credential?.jurisdiction }}
+                    nft={
+                      credential?.nft
+                        ? { ...credential.nft, jurisdiction: region || credential.nft.jurisdiction }
+                        : { tier: credential?.tier, jurisdiction: region }
+                    }
                     account={account}
                     expiresAt={credential?.expiresAt}
                     onAddWallet={onAddWallet}
@@ -409,7 +420,7 @@ export default function SignedApp({
             </h2>
             <dl className="grid grid-cols-2 gap-px bg-black/[0.05] sm:grid-cols-4">
               <Fact icon={Layers3} label="Tier" value={prettyTier(credential?.tier) || "—"} />
-              <Fact icon={Globe2} label="Region" value={credential?.jurisdiction || "—"} />
+              <Fact icon={Globe2} label="Region" value={region || "—"} />
               <Fact icon={Lock} label="Personal data" value="Off-chain" />
               <Fact icon={Sparkles} label="Badge" value={valid || credential?.nft ? "Minted" : "Not yet"} />
             </dl>
@@ -466,32 +477,42 @@ export default function SignedApp({
               <span className="mb-1.5 inline-flex items-center gap-1.5">
                 <Layers3 size={12} /> Tier
               </span>
-              <select
-                className="field mt-1.5 h-11"
-                value={tier}
-                onChange={(e) => setTier(e.target.value)}
-                disabled={valid || feeBusy || busy}
-              >
-                <option value="RETAIL">Retail</option>
-                <option value="ACCREDITED">Accredited</option>
-                <option value="INSTITUTIONAL">Institutional</option>
-              </select>
+              {valid ? (
+                <p className="field mt-1.5 flex h-11 items-center font-semibold text-ink">
+                  {prettyTier(credential?.nft?.tier || credential?.tier || tier) || "—"}
+                </p>
+              ) : (
+                <select
+                  className="field mt-1.5 h-11"
+                  value={tier}
+                  onChange={(e) => setTier(e.target.value)}
+                  disabled={feeBusy || busy}
+                >
+                  <option value="RETAIL">Retail</option>
+                  <option value="ACCREDITED">Accredited</option>
+                  <option value="INSTITUTIONAL">Institutional</option>
+                </select>
+              )}
             </label>
             <label className="block text-[11px] font-medium text-mute">
               <span className="mb-1.5 inline-flex items-center gap-1.5">
                 <Globe2 size={12} /> Region
               </span>
-              <select
-                className="field mt-1.5 h-11"
-                value={jurisdiction}
-                onChange={(e) => setJurisdiction(e.target.value)}
-                disabled={valid || feeBusy || busy}
-              >
-                <option value="NG">NG</option>
-                <option value="US">US</option>
-                <option value="GB">GB</option>
-                <option value="EU">EU</option>
-              </select>
+              {valid ? (
+                <p className="field mt-1.5 flex h-11 items-center font-semibold text-ink">{region || "—"}</p>
+              ) : (
+                <select
+                  className="field mt-1.5 h-11"
+                  value={jurisdiction}
+                  onChange={(e) => setJurisdiction(e.target.value)}
+                  disabled={feeBusy || busy}
+                >
+                  <option value="NG">NG</option>
+                  <option value="US">US</option>
+                  <option value="GB">GB</option>
+                  <option value="EU">EU</option>
+                </select>
+              )}
             </label>
           </div>
 
@@ -524,7 +545,11 @@ export default function SignedApp({
           {valid ? (
             <div className="rounded-2xl bg-brand p-3">
               <NftPassCard
-                nft={credential?.nft || { tier: credential?.tier, jurisdiction: credential?.jurisdiction }}
+                nft={
+                  credential?.nft
+                    ? { ...credential.nft, jurisdiction: region || credential.nft.jurisdiction }
+                    : { tier: credential?.tier, jurisdiction: region }
+                }
                 account={account}
                 expiresAt={credential?.expiresAt}
                 onAddWallet={onAddWallet}
@@ -636,7 +661,7 @@ export default function SignedApp({
 
           <div className="grid gap-2.5 sm:grid-cols-2">
             <StatusRow icon={Layers3} label="Tier" value={prettyTier(credential?.tier)} />
-            <StatusRow icon={Globe2} label="Region" value={credential?.jurisdiction} />
+            <StatusRow icon={Globe2} label="Region" value={region} />
             <StatusRow icon={RefreshCw} label="Request" value={verification?.status || "Ready"} />
             <StatusRow icon={ShieldCheck} label="Expires" value={formatExpiry(credential?.expiresAt)} />
             <div className="sm:col-span-2">

@@ -117,12 +117,11 @@ async function issueOnChain({ holderAddress, tier, jurisdiction, commitmentHash,
 
   try {
     const registry = new ethers.Contract(registryAddress, REGISTRY_ABI, wallet);
-    const j = ethers.hexlify(ethers.toUtf8Bytes(String(jurisdiction || "XX").padEnd(2, "\0"))).slice(0, 6);
     const tx = await registry.issueCredential(
       holderAddress,
       commitmentHash,
       Number(tier),
-      j,
+      encodeJurisdiction(jurisdiction),
       Number(validityPeriodSeconds || 31536000)
     );
     const receipt = await tx.wait();
@@ -224,17 +223,11 @@ async function readCredentialOnChain(holderAddress) {
     const cred = await registry.credentials(holderAddress);
     const issuedAt = Number(cred.issuedAt || 0n);
     if (!issuedAt) return null;
-    let jurisdiction = "";
-    try {
-      jurisdiction = ethers.toUtf8String(cred.jurisdiction).replace(/\0/g, "").trim();
-    } catch {
-      jurisdiction = null;
-    }
     return {
       holderAddress,
       commitmentHash: cred.commitmentHash,
       tier: Number(cred.tier),
-      jurisdiction: jurisdiction || null,
+      jurisdiction: decodeBytes2(cred.jurisdiction),
       issuerAddress: cred.issuer,
       issuedAt: new Date(issuedAt * 1000).toISOString(),
       expiresAt: new Date(Number(cred.expiresAt) * 1000).toISOString(),
@@ -248,8 +241,25 @@ async function readCredentialOnChain(holderAddress) {
   }
 }
 
+function decodeBytes2(value) {
+  if (value == null || value === "0x" || value === "0x0000") return null;
+  try {
+    const bytes = ethers.getBytes(value);
+    let out = "";
+    for (const b of bytes) {
+      if (!b) continue;
+      out += String.fromCharCode(b);
+    }
+    out = out.toUpperCase().trim();
+    return /^[A-Z]{2}$/.test(out) ? out : null;
+  } catch {
+    return null;
+  }
+}
+
 function encodeJurisdiction(jurisdiction) {
-  return ethers.hexlify(ethers.toUtf8Bytes(String(jurisdiction || "XX").padEnd(2, "\0"))).slice(0, 6);
+  const code = `${String(jurisdiction || "XX").toUpperCase().replace(/[^A-Z]/g, "")}XX`.slice(0, 2);
+  return ethers.hexlify(ethers.toUtf8Bytes(code));
 }
 
 async function mintPassOnChain({ holderAddress, tier, jurisdiction, expiresAtUnix }) {
@@ -291,12 +301,6 @@ async function readPassOnChain(holderAddress) {
     const nft = new ethers.Contract(passAddress, PASS_ABI, provider);
     const row = await nft.passOf(holderAddress);
     if (!row.exists) return null;
-    let jurisdiction = "";
-    try {
-      jurisdiction = ethers.toUtf8String(row.jurisdiction).replace(/\0/g, "").trim();
-    } catch {
-      jurisdiction = null;
-    }
     let tokenURI = null;
     try {
       tokenURI = await nft.tokenURI(row.tokenId);
@@ -307,7 +311,7 @@ async function readPassOnChain(holderAddress) {
       address: passAddress,
       tokenId: row.tokenId.toString(),
       tier: Number(row.tier),
-      jurisdiction: jurisdiction || null,
+      jurisdiction: decodeBytes2(row.jurisdiction),
       issuedAt: Number(row.issuedAt) ? new Date(Number(row.issuedAt) * 1000).toISOString() : null,
       expiresAt: Number(row.expiresAt) ? new Date(Number(row.expiresAt) * 1000).toISOString() : null,
       tokenURI,

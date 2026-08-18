@@ -16,6 +16,7 @@ const {
   upsertCredentialCache,
   updateVerification,
   normalizeTier,
+  normalizeJurisdiction,
   tierLabel,
   commitmentHashFallback,
   getFeeStatus,
@@ -274,6 +275,10 @@ app.post("/verifications", requireIssuer, async (req, res) => {
     }
 
     const requestedTier = tier === undefined || tier === null || tier === "" ? "RETAIL" : tier;
+    const region = normalizeJurisdiction(jurisdiction);
+    if (!region) {
+      return res.status(400).json({ error: "jurisdiction is required (NG, US, GB, or EU)" });
+    }
     const hash =
       commitmentHash ||
       commitmentHashFallback([holderAddress, String(requestedTier), Date.now()]);
@@ -287,7 +292,7 @@ app.post("/verifications", requireIssuer, async (req, res) => {
       holderAddress,
       issuerAddress: req.issuer.address,
       tier: tierNum,
-      jurisdiction: jurisdiction ? String(jurisdiction).toUpperCase().slice(0, 2) : null,
+      jurisdiction: region,
       commitmentHash: hash,
       validityPeriodSeconds: validity,
       estimatedSeconds,
@@ -334,37 +339,39 @@ app.get("/credentials/:holderAddress", async (req, res) => {
   if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
     return res.status(400).json({ error: "Invalid holder address" });
   }
-  const cached = await getCachedCredential(address);
-  if (cached) return res.json(cached);
 
-  let row = await getCredential(address);
-  if (!row) {
-    const onchain = await readCredentialOnChain(address);
-    if (onchain) {
-      row = await upsertCredentialCache(onchain);
-    }
-  }
+  const [cached, onchain, pass] = await Promise.all([
+    getCachedCredential(address),
+    readCredentialOnChain(address),
+    readPassOnChain(address),
+  ]);
+
+  let row = onchain || (await getCredential(address)) || cached;
   if (!row) return res.status(404).json({ error: "No credential on record" });
 
+  const region =
+    normalizeJurisdiction(pass?.jurisdiction) ||
+    normalizeJurisdiction(onchain?.jurisdiction) ||
+    normalizeJurisdiction(row.jurisdiction);
+  const tierValue = pass?.tier || onchain?.tier || row.tier;
   const valid = !row.revoked && new Date(row.expiresAt) > new Date();
   const payload = {
     holderAddress: address,
-    tier: tierLabel(row.tier),
-    jurisdiction: row.jurisdiction,
+    tier: tierLabel(tierValue) || row.tier,
+    jurisdiction: region,
     issuer: row.issuerAddress,
     issuedAt: row.issuedAt,
     expiresAt: row.expiresAt,
     revoked: Boolean(row.revoked),
     valid,
-    source: useMemory ? "memory" : "postgres",
+    source: onchain ? "chain" : useMemory ? "memory" : "postgres",
   };
-  const pass = await readPassOnChain(address);
   if (pass) {
     payload.nft = {
       address: pass.address,
       tokenId: pass.tokenId,
       tier: tierLabel(pass.tier) || payload.tier,
-      jurisdiction: pass.jurisdiction || payload.jurisdiction,
+      jurisdiction: normalizeJurisdiction(pass.jurisdiction) || region,
       tokenURI: pass.tokenURI,
     };
   }
