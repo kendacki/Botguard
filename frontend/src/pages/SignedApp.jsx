@@ -161,7 +161,11 @@ function NftPassCard({ nft, account, expiresAt, onAddWallet }) {
           <button
             type="button"
             className="inline-flex items-center gap-1 text-xs font-medium text-white/90 underline-offset-2 hover:underline"
-            onClick={onAddWallet}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onAddWallet();
+            }}
           >
             Add to wallet
           </button>
