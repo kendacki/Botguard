@@ -20,6 +20,7 @@ import {
 import Alert from "../components/Alert.jsx";
 import Modal from "../components/Modal.jsx";
 import { ArtIdle } from "../components/DashArt.jsx";
+import SuccessMark from "../components/SuccessMark.jsx";
 import { shortAddr } from "../lib/api.js";
 import { explorerAddressUrl, explorerNftUrl, VERIFICATION_PASS_ADDRESS } from "../lib/chain.js";
 import { passBadgeDataUrl } from "../lib/passBadge.js";
@@ -257,12 +258,6 @@ export default function SignedApp({
   const closeSheet = () => setView("home");
   const label = passLabel({ valid, verification, feeEscrowed });
   const region = issuedRegion(credential, valid ? null : jurisdiction);
-  const badgeSrc = passBadgeDataUrl({
-    account,
-    tier: prettyTier(credential?.nft?.tier || credential?.tier) || "Pass",
-    jurisdiction: region,
-    expiresAt: credential?.expiresAt,
-  });
 
   useEffect(() => {
     if (openedVerifyOnce.current || valid || credential) return undefined;
@@ -324,12 +319,12 @@ export default function SignedApp({
             />
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-stretch">
               <div
-                className={`flex h-[132px] w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:h-auto sm:w-[148px] ${
-                  valid ? "bg-white/15 ring-1 ring-white/25" : "bg-brand/8 ring-1 ring-brand/10"
+                className={`flex h-[132px] w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:h-auto sm:min-h-[148px] sm:w-[148px] ${
+                  valid ? "bg-[#F7F6F3] ring-1 ring-white/40" : "bg-brand/8 ring-1 ring-brand/10"
                 }`}
               >
                 {valid ? (
-                  <img src={badgeSrc} alt="BOTGUARD verification badge" className="h-full w-full object-cover" />
+                  <SuccessMark className="h-[128px] w-[128px]" />
                 ) : (
                   <ArtIdle className="h-[108px] w-[108px]" />
                 )}
