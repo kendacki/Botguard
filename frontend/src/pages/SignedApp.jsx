@@ -334,10 +334,12 @@ export default function SignedApp({
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className={`text-[11px] font-medium uppercase tracking-wide ${valid ? "text-white/70" : "text-mute"}`}>
-                      {valid ? "Shared across BOT Chain" : "This wallet"}
+                    {valid ? null : (
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-mute">
+                      This wallet
                     </p>
-                    <p className={`mt-1 text-xl font-semibold tracking-tight ${valid ? "text-white" : "text-ink"}`}>
+                    )}
+                    <p className={`${valid ? "" : "mt-1 "}text-xl font-semibold tracking-tight ${valid ? "text-white" : "text-ink"}`}>
                       {valid
                         ? `${prettyTier(credential?.nft?.tier || credential?.tier) || "Retail"}${region ? ` · ${region}` : ""}`
                         : "Not verified yet"}
