@@ -33,6 +33,7 @@ const {
   readEscrowedFee,
   readCredentialOnChain,
   readPassOnChain,
+  mintPassOnChain,
   readVerificationFee,
   assertIssuerReady,
 } = require("./chain");
@@ -377,6 +378,57 @@ app.get("/credentials/:holderAddress", async (req, res) => {
   }
   await setCachedCredential(address, payload, Number(process.env.CRED_CACHE_TTL || 3));
   res.json(payload);
+});
+
+app.post("/credentials/:holderAddress/nft", requireIssuer, async (req, res) => {
+  const address = req.params.holderAddress;
+  if (!address || !/^0x[a-fA-F0-9]{40}$/i.test(address)) {
+    return res.status(400).json({ error: "Invalid holder address" });
+  }
+
+  const [onchain, pass, stored] = await Promise.all([
+    readCredentialOnChain(address),
+    readPassOnChain(address),
+    getCredential(address),
+  ]);
+  const row = onchain || stored;
+  if (!row || row.revoked) {
+    return res.status(404).json({ error: "No live pass to mint a badge for." });
+  }
+  if (new Date(row.expiresAt) <= new Date()) {
+    return res.status(400).json({ error: "This pass has expired." });
+  }
+  if (pass) {
+    return res.json({ nft: pass, minted: false });
+  }
+
+  let tierNum;
+  try {
+    tierNum = normalizeTier(row.tier);
+  } catch {
+    return res.status(400).json({ error: "Pass tier is missing." });
+  }
+  const region = normalizeJurisdiction(row.jurisdiction) || "US";
+  const expiresAtUnix = Math.floor(new Date(row.expiresAt).getTime() / 1000);
+  if (!Number.isFinite(expiresAtUnix) || expiresAtUnix <= 0) {
+    return res.status(400).json({ error: "Pass expiry is missing." });
+  }
+
+  const minted = await mintPassOnChain({
+    holderAddress: address,
+    tier: tierNum,
+    jurisdiction: region,
+    expiresAtUnix,
+  });
+  if (!minted?.txHash) {
+    return res.status(502).json({
+      error: minted?.error || "Could not mint the badge on BOT Chain. Check the issuer wallet and pass contract.",
+    });
+  }
+
+  const fresh = await readPassOnChain(address);
+  await invalidateCredential(address);
+  res.json({ nft: fresh, minted: true, txHash: minted.txHash });
 });
 
 app.post("/credentials/:holderAddress/renew", requireIssuer, async (req, res) => {

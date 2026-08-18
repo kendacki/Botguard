@@ -128,15 +128,25 @@ async function issueOnChain({ holderAddress, tier, jurisdiction, commitmentHash,
     const expiresAtUnix = Math.floor(Date.now() / 1000) + Number(validityPeriodSeconds || 31536000);
     let nftTxHash = null;
     let tokenId = null;
-    const minted = await mintPassOnChain({
+    let minted = await mintPassOnChain({
       holderAddress,
       tier,
       jurisdiction,
       expiresAtUnix,
     });
+    if (!minted?.txHash) {
+      minted = await mintPassOnChain({
+        holderAddress,
+        tier,
+        jurisdiction,
+        expiresAtUnix,
+      });
+    }
     if (minted?.txHash) {
       nftTxHash = minted.txHash;
       tokenId = minted.tokenId;
+    } else if (minted?.error) {
+      console.warn("[chain] badge mint skipped after issueCredential:", minted.error);
     }
     return { txHash: receipt.hash, commitmentHash, nftTxHash, tokenId };
   } catch (err) {

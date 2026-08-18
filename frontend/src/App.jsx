@@ -15,7 +15,7 @@ import Modal from "./components/Modal.jsx";
 import Alert from "./components/Alert.jsx";
 import SignedApp from "./pages/SignedApp.jsx";
 import { api, DEMO_API_KEY, shortAddr } from "./lib/api.js";
-import { BOT_CHAIN, ensureBotChain, waitForBotChain, explorerTxUrl, VERIFICATION_PASS_ADDRESS } from "./lib/chain.js";
+import { BOT_CHAIN, ensureBotChain, pinBotChain, getInjectedProvider, explorerTxUrl, VERIFICATION_PASS_ADDRESS } from "./lib/chain.js";
 
 const easeOut = [0.22, 1, 0.36, 1];
 const heroContainer = {
@@ -597,9 +597,13 @@ export default function App() {
     setError("");
     setSuccess("");
     if (!account) return;
-    // Token id is uint160(holder). Always derive it from the connected wallet so
-    // MetaMask gets a decimal string (hex / JSON numbers fail ownership checks).
-    const tokenId = BigInt(account).toString();
+
+    const eth = getInjectedProvider();
+    if (!eth?.request) {
+      setError("Open MetaMask on BOT Chain Testnet, then tap Add to wallet.");
+      return;
+    }
+
     let passAddress = credential?.nft?.address || VERIFICATION_PASS_ADDRESS;
     if (!passAddress) {
       try {
@@ -613,56 +617,83 @@ export default function App() {
       setError("Badge contract address not found.");
       return;
     }
-    if (!window.ethereum?.request) {
-      setError("Open MetaMask → NFTs → Import NFT and paste the contract and token ID.");
-      return;
-    }
 
     const checksum = getAddress(passAddress);
-    const importText = `Network: ${BOT_CHAIN.name} (${BOT_CHAIN.chainId})\nContract: ${checksum}\nToken ID: ${tokenId}`;
-
-    async function copyImportHint(message) {
-      try {
-        await navigator.clipboard.writeText(importText);
-      } catch {
-        /* ignore */
-      }
-      setSuccess(message);
-    }
+    const passAbi = [
+      "function hasPass(address holder) view returns (bool)",
+      "function passOf(address holder) view returns (uint256 tokenId, uint8 tier, bytes2 jurisdiction, uint64 issuedAt, uint64 expiresAt, bool exists)",
+      "function ownerOf(uint256 tokenId) view returns (address)",
+    ];
 
     try {
-      await waitForBotChain(window.ethereum);
-      // MetaMask’s NFT controller can still be on the previous networkClientId
-      // immediately after wallet_switchEthereumChain.
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const chainHex = await window.ethereum.request({ method: "eth_chainId" });
-      if (Number.parseInt(String(chainHex), 16) !== BOT_CHAIN.chainId) {
-        setError(`Switch MetaMask to ${BOT_CHAIN.name} first, then tap Add to wallet.`);
+      await pinBotChain(eth);
+      const provider = new BrowserProvider(eth);
+      const nft = new Contract(checksum, passAbi, provider);
+
+      async function readLivePass() {
+        const row = await nft.passOf(account);
+        if (!row.exists) return null;
+        const tokenId = row.tokenId.toString();
+        const owner = await nft.ownerOf(tokenId);
+        return { tokenId, owner };
+      }
+
+      let live = null;
+      try {
+        live = await readLivePass();
+      } catch {
+        live = null;
+      }
+
+      if (!live) {
+        setSuccess("Minting your badge on BOT Chain…");
+        await api(`/credentials/${account}/nft`, {
+          method: "POST",
+          headers: { "X-BOTGUARD-Api-Key": DEMO_API_KEY },
+        });
+        await refreshCredential();
+        for (let i = 0; i < 8 && !live; i += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          try {
+            live = await readLivePass();
+          } catch {
+            live = null;
+          }
+        }
+      }
+
+      if (!live) {
+        setError("The badge isn’t on BOT Chain yet. Sync, then try Add to wallet again.");
+        setSuccess("");
+        return;
+      }
+      if (live.owner.toLowerCase() !== account.toLowerCase()) {
+        setError("This badge belongs to a different wallet. Switch account in MetaMask.");
+        setSuccess("");
         return;
       }
 
-      const added = await window.ethereum.request({
+      const added = await eth.request({
         method: "wallet_watchAsset",
         params: {
           type: "ERC721",
-          options: { address: checksum, tokenId },
+          options: { address: checksum, tokenId: live.tokenId },
         },
       });
-      if (added) {
-        setSuccess("Badge added. Check NFTs in your wallet.");
+      if (added === false) {
+        setError("Wallet declined the badge import.");
+        setSuccess("");
         return;
       }
-      await copyImportHint(
-        "Import it in MetaMask: NFTs → Import NFT. Contract and token ID are copied.",
-      );
+      setSuccess("Badge added. Check NFTs in MetaMask on BOT Chain Testnet.");
     } catch (err) {
       if (err?.code === 4001) {
         setError("Wallet declined the badge import.");
+        setSuccess("");
         return;
       }
-      await copyImportHint(
-        "MetaMask couldn’t auto-add this badge. Contract and token ID are copied — MetaMask → NFTs → Import NFT, on BOT Chain Testnet.",
-      );
+      setError(err?.shortMessage || err?.message || "Could not add the badge.");
+      setSuccess("");
     }
   }
 

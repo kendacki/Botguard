@@ -26,8 +26,17 @@ export function explorerNftUrl(address) {
 export const VERIFICATION_PASS_ADDRESS =
   import.meta.env.VITE_VERIFICATION_PASS_ADDRESS || "0x3e01dC32E7c3dCC9D43bEe186A73575004cd818E";
 
+export function getInjectedProvider() {
+  const eth = typeof window !== "undefined" ? window.ethereum : null;
+  if (!eth) return null;
+  if (Array.isArray(eth.providers) && eth.providers.length) {
+    return eth.providers.find((provider) => provider.isMetaMask) || eth.providers[0];
+  }
+  return eth;
+}
+
 /** Switch wallet to BOT Chain Testnet; add the network if missing. */
-export async function ensureBotChain(ethereum = window.ethereum) {
+export async function ensureBotChain(ethereum = getInjectedProvider()) {
   if (!ethereum?.request) {
     throw new Error("No injected wallet found.");
   }
@@ -57,7 +66,7 @@ export async function ensureBotChain(ethereum = window.ethereum) {
   }
 }
 
-export async function waitForBotChain(ethereum = window.ethereum, timeoutMs = 10000) {
+export async function waitForBotChain(ethereum = getInjectedProvider(), timeoutMs = 10000) {
   await ensureBotChain(ethereum);
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
@@ -66,4 +75,29 @@ export async function waitForBotChain(ethereum = window.ethereum, timeoutMs = 10
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
   throw new Error(`Switch your wallet to ${BOT_CHAIN.name} (chain ${BOT_CHAIN.chainId}).`);
+}
+
+/** Add/switch BOT Chain and pin rpc.bohr.life so NFT ownership checks hit the right RPC. */
+export async function pinBotChain(ethereum = getInjectedProvider()) {
+  if (!ethereum?.request) {
+    throw new Error("No injected wallet found.");
+  }
+  try {
+    await ethereum.request({
+      method: "wallet_addEthereumChain",
+      params: [
+        {
+          chainId: BOT_CHAIN.chainIdHex,
+          chainName: BOT_CHAIN.name,
+          rpcUrls: [BOT_CHAIN.rpcUrl],
+          nativeCurrency: BOT_CHAIN.nativeCurrency,
+          blockExplorerUrls: [BOT_CHAIN.explorer],
+        },
+      ],
+    });
+  } catch (err) {
+    if (err?.code === 4001) throw err;
+    await ensureBotChain(ethereum);
+  }
+  await waitForBotChain(ethereum);
 }
