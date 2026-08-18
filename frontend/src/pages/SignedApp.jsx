@@ -295,9 +295,9 @@ export default function SignedApp({
               <h1 className={`text-[1.65rem] font-semibold tracking-tight text-ink sm:text-3xl ${valid ? "" : "mt-1.5"}`}>
                 {valid ? "You're cleared." : "Verify once. Use it everywhere."}
               </h1>
-              <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-mute">
+              <p className={`mt-1.5 text-sm leading-relaxed text-mute ${valid ? "whitespace-nowrap" : "max-w-sm"}`}>
                 {valid
-                  ? "Apps can reuse this answer. Nothing personal is on chain."
+                  ? "Apps can reuse this verified Wallet. Information is Off-chain."
                   : "One wallet tap. Your pass and badge land on BOT Chain."}
               </p>
             </div>
