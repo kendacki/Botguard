@@ -414,6 +414,7 @@ export default function SignedApp({
             </div>
           </motion.section>
 
+          {valid ? null : (
           <section className="dash-facts" aria-labelledby="pass-facts-heading">
             <h2 id="pass-facts-heading" className="border-b border-black/[0.05] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">
               On this pass
@@ -422,9 +423,10 @@ export default function SignedApp({
               <Fact icon={Layers3} label="Tier" value={prettyTier(credential?.tier) || "—"} />
               <Fact icon={Globe2} label="Region" value={region || "—"} />
               <Fact icon={Lock} label="Personal data" value="Off-chain" />
-              <Fact icon={Sparkles} label="Badge" value={valid || credential?.nft ? "Minted" : "Not yet"} />
+              <Fact icon={Sparkles} label="Badge" value={credential?.nft ? "Minted" : "Not yet"} />
             </dl>
           </section>
+          )}
 
           <nav aria-label="Pass actions">
             <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
