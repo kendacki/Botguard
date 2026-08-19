@@ -98,8 +98,70 @@ Optional extra Railway services (same repo, different Dockerfiles):
 docker compose -f infra/docker-compose.yml up --build
 ```
 
+## How other platforms confirm a wallet
+
+Other apps never see ID documents. They only check **whether this wallet is cleared**, **which tier** (Retail / Accredited / Institutional), and **which region**. Personal data stays off-chain.
+
+Use one of three paths. On-chain is the source of truth; the API is a convenience read.
+
+### 1. HTTP status (any backend)
+
+No API key. `verified` is false for missing, expired, or revoked wallets (HTTP 200, not 404).
+
+```bash
+curl "https://botguard-production-7c4d.up.railway.app/status/0xWALLET"
+curl "https://botguard-production-7c4d.up.railway.app/status/0xWALLET?minTier=ACCREDITED&jurisdiction=US"
+```
+
+```json
+{
+  "verified": true,
+  "kind": { "tier": "RETAIL", "tierRank": 1, "jurisdiction": "US", "label": "RETAIL · US" },
+  "meetsRequirement": true,
+  "requirement": { "minTier": "RETAIL", "jurisdiction": null },
+  "expiresAt": "2027-08-19T00:00:00.000Z",
+  "badge": { "contract": "0x3e01…", "tokenId": "…", "owned": true },
+  "personalData": "off-chain"
+}
+```
+
+Gate your product on `meetsRequirement` (or `verified` if you only need “cleared at Retail or above”). `kind.tier` / `kind.jurisdiction` is the verification that was done.
+
+### 2. On-chain (RWA tokens, contracts)
+
+BOT Chain Testnet (968). Registry: `0xfcdD8c5823dcDEE47836bfbAd03A425DFd1C0fe5`
+
+```solidity
+// inherit ComplianceGate, or call the registry directly
+enum InvestorTier { NONE, RETAIL, ACCREDITED, INSTITUTIONAL } // 0–3
+
+function isValid(address holder, InvestorTier minimumTier) external view returns (bool);
+function isValidForJurisdiction(address holder, InvestorTier minimumTier, bytes2 region) external view returns (bool);
+```
+
+```js
+const registry = new Contract(REGISTRY, [
+  "function isValid(address,uint8) view returns (bool)",
+  "function credentials(address) view returns (bytes32,uint8 tier,bytes2 jurisdiction,address,uint64,uint64,bool revoked,bytes32)",
+], provider);
+
+const cleared = await registry.isValid(wallet, 1); // 1 = Retail
+const [, tier, region] = await registry.credentials(wallet);
+```
+
+Tiers: `1` Retail, `2` Accredited, `3` Institutional. Region is ISO 3166-1 alpha-2 (`US`, `NG`, `GB`, `EU`).
+
+`ExampleRWAToken` shows transfer gating: both sender and recipient must pass `onlyCompliant`.
+
+Soulbound badge (kind on the NFT): VerificationPass `0x3e01dC32E7c3dCC9D43bEe186A73575004cd818E` — `hasPass(wallet)` / `passOf(wallet)`.
+
+### 3. Cached credential record
+
+`GET /credentials/{holderAddress}` — same facts (`valid`, `tier`, `jurisdiction`, `nft`). 404 if this wallet has never been issued a pass.
+
 ## API (from `services/api/openapi.yaml`)
 
+- `GET /status/{holderAddress}` — public wallet check (`?minTier=&jurisdiction=`)
 - `POST /verifications` — async issuance (`202`, status poll)
 - `GET /verifications/{requestId}`
 - `GET /credentials/{holderAddress}`

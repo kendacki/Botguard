@@ -4,16 +4,15 @@ info:
   version: "1.0.0"
   description: >
     Off-chain API layer for BOTGUARD, the compliance credential registry for
-    BOT Chain RWA applications. Handles verification submission, credential
-    status queries, issuer management, and monitoring flag ingestion.
-    All state-changing operations here are mirrored on-chain; this API is
-    the ergonomic front door, not a bypass of the contracts.
+    BOT Chain RWA applications. Other platforms call GET /status/{wallet} to
+    confirm a wallet is verified and to read the verification kind (tier +
+    region). Identity documents never leave the issuer.
 
 servers:
-  - url: https://api.botguard.xyz/v1
-    description: Production
-  - url: https://testnet-api.botguard.xyz/v1
-    description: BOT Chain Testnet
+  - url: https://botguard-production-7c4d.up.railway.app
+    description: BOT Chain Testnet API
+  - url: http://localhost:8080
+    description: Local
 
 security:
   - ApiKeyAuth: []
@@ -109,12 +108,53 @@ paths:
         '404':
           description: Not found
 
+  /status/{holderAddress}:
+    get:
+      summary: Public check — is this wallet verified, and what kind of check was it?
+      description: >
+        For other platforms. No API key. Returns whether the wallet is currently
+        cleared, the verification kind (tier + region), and whether it meets an
+        optional minimum tier / jurisdiction. Missing, expired, and revoked
+        wallets return verified=false with HTTP 200. Personal data is never included.
+      security: []
+      parameters:
+        - name: holderAddress
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: minTier
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [RETAIL, ACCREDITED, INSTITUTIONAL]
+          description: Default RETAIL. meetsRequirement is false if the pass is below this tier.
+        - name: jurisdiction
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 2
+          description: Optional ISO region. If set, meetsRequirement also requires a matching region.
+      responses:
+        '200':
+          description: Status for this wallet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletStatus'
+        '400':
+          description: Invalid address or minTier
+
   /credentials/{holderAddress}:
     get:
       summary: Query a holder's current credential status
       description: >
         Read-hot-path endpoint, served from credentials_cache with a short
         Redis TTL. Never blocks on a live chain call.
+      security: []
       parameters:
         - name: holderAddress
           in: path
@@ -268,6 +308,64 @@ components:
           type: string
         failureReason:
           type: string
+
+    WalletStatus:
+      type: object
+      properties:
+        holderAddress:
+          type: string
+        verified:
+          type: boolean
+          description: Live pass — not expired, not revoked, Retail or above
+        kind:
+          type: object
+          nullable: true
+          properties:
+            tier:
+              type: string
+              enum: [RETAIL, ACCREDITED, INSTITUTIONAL]
+            tierRank:
+              type: integer
+              description: 1 Retail, 2 Accredited, 3 Institutional
+            jurisdiction:
+              type: string
+            label:
+              type: string
+              example: RETAIL · US
+        meetsRequirement:
+          type: boolean
+        requirement:
+          type: object
+          properties:
+            minTier:
+              type: string
+            jurisdiction:
+              type: string
+              nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        revoked:
+          type: boolean
+        badge:
+          type: object
+          nullable: true
+          properties:
+            contract:
+              type: string
+            tokenId:
+              type: string
+              nullable: true
+            owned:
+              type: boolean
+        registry:
+          type: string
+        chainId:
+          type: integer
+        personalData:
+          type: string
+          example: off-chain
 
     CredentialStatus:
       type: object

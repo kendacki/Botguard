@@ -21,6 +21,7 @@ const {
   commitmentHashFallback,
   getFeeStatus,
   upsertFeeStatus,
+  TIER_TO_NUM,
 } = require("./store");
 const { initCache, getCachedCredential, setCachedCredential, invalidateCredential } = require("./cache");
 const { decideActionFromFlags } = require("../monitor/rules");
@@ -35,6 +36,8 @@ const {
   readPassOnChain,
   mintPassOnChain,
   readVerificationFee,
+  getPassAddress,
+  getRegistryAddress,
   assertIssuerReady,
 } = require("./chain");
 
@@ -132,6 +135,98 @@ app.get("/readyz", async (_req, res) => {
 
 app.get("/issuers", async (_req, res) => {
   res.json(await listIssuers());
+});
+
+/** Public check for other apps: is this wallet verified, and what kind of check was it? */
+app.get("/status/:holderAddress", async (req, res) => {
+  const address = req.params.holderAddress;
+  if (!/^0x[a-fA-F0-9]{40}$/i.test(address)) {
+    return res.status(400).json({ error: "Invalid holder address" });
+  }
+
+  let minTier = TIER_TO_NUM.RETAIL;
+  if (req.query.minTier != null && req.query.minTier !== "") {
+    try {
+      minTier = normalizeTier(req.query.minTier);
+    } catch {
+      return res.status(400).json({ error: "minTier must be RETAIL, ACCREDITED, or INSTITUTIONAL" });
+    }
+  }
+  const requiredRegion = normalizeJurisdiction(req.query.jurisdiction);
+
+  const [cached, onchain, pass] = await Promise.all([
+    getCachedCredential(address),
+    readCredentialOnChain(address),
+    readPassOnChain(address),
+  ]);
+  const row = onchain || (await getCredential(address)) || cached;
+  const chainId = Number(process.env.BOTCHAIN_CHAIN_ID || 968);
+  const registry = getRegistryAddress();
+  const passAddress = getPassAddress();
+
+  const empty = {
+    holderAddress: address,
+    verified: false,
+    kind: null,
+    meetsRequirement: false,
+    requirement: {
+      minTier: tierLabel(minTier),
+      jurisdiction: requiredRegion,
+    },
+    expiresAt: null,
+    revoked: false,
+    badge: passAddress ? { contract: passAddress, tokenId: null, owned: false } : null,
+    registry,
+    chainId,
+    personalData: "off-chain",
+  };
+
+  if (!row) return res.json(empty);
+
+  const region =
+    normalizeJurisdiction(pass?.jurisdiction) ||
+    normalizeJurisdiction(onchain?.jurisdiction) ||
+    normalizeJurisdiction(row.jurisdiction);
+  let tierValue = 0;
+  try {
+    tierValue = normalizeTier(pass?.tier || onchain?.tier || row.tier);
+  } catch {
+    tierValue = 0;
+  }
+  const revoked = Boolean(row.revoked);
+  const expired = new Date(row.expiresAt) <= new Date();
+  const verified = !revoked && !expired && tierValue >= TIER_TO_NUM.RETAIL;
+  const meetsMinTier = verified && tierValue >= minTier;
+  const matchesRegion = !requiredRegion || region === requiredRegion;
+  const kind = {
+    tier: tierLabel(tierValue) || String(row.tier || ""),
+    tierRank: tierValue,
+    jurisdiction: region,
+    label: [tierLabel(tierValue) || row.tier, region].filter(Boolean).join(" · "),
+  };
+
+  res.json({
+    holderAddress: address,
+    verified,
+    kind: verified || row.issuedAt ? kind : null,
+    meetsRequirement: Boolean(meetsMinTier && matchesRegion),
+    requirement: {
+      minTier: tierLabel(minTier),
+      jurisdiction: requiredRegion,
+    },
+    expiresAt: row.expiresAt || null,
+    revoked,
+    badge: passAddress
+      ? {
+          contract: pass.address || passAddress,
+          tokenId: pass?.tokenId || null,
+          owned: Boolean(pass),
+        }
+      : null,
+    registry,
+    chainId,
+    personalData: "off-chain",
+  });
 });
 
 app.get("/verifications/fee", async (_req, res) => {
