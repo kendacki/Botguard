@@ -647,10 +647,7 @@ export default function App() {
 
       if (!live) {
         setSuccess("Minting your badge on BOT Chain…");
-        await api(`/credentials/${account}/nft`, {
-          method: "POST",
-          headers: { "X-BOTGUARD-Api-Key": DEMO_API_KEY },
-        });
+        await api(`/credentials/${account}?mint=1`);
         await refreshCredential();
         for (let i = 0; i < 8 && !live; i += 1) {
           await new Promise((resolve) => setTimeout(resolve, 400));

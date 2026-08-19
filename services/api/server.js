@@ -38,6 +38,41 @@ const {
   assertIssuerReady,
 } = require("./chain");
 
+function passToNft(pass, fallbackTier, fallbackRegion) {
+  if (!pass) return null;
+  return {
+    address: pass.address,
+    tokenId: pass.tokenId,
+    tier: tierLabel(pass.tier) || fallbackTier,
+    jurisdiction: normalizeJurisdiction(pass.jurisdiction) || fallbackRegion,
+    tokenURI: pass.tokenURI,
+  };
+}
+
+async function mintMissingPass(address, row) {
+  const existing = await readPassOnChain(address);
+  if (existing) return existing;
+  const expiresAtUnix = Math.floor(new Date(row.expiresAt).getTime() / 1000);
+  if (!Number.isFinite(expiresAtUnix) || expiresAtUnix <= 0) {
+    const err = new Error("Pass expiry is missing.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const minted = await mintPassOnChain({
+    holderAddress: address,
+    tier: normalizeTier(row.tier),
+    jurisdiction: normalizeJurisdiction(row.jurisdiction) || "US",
+    expiresAtUnix,
+  });
+  if (!minted?.txHash) {
+    const err = new Error(minted?.error || "Could not mint the badge on BOT Chain.");
+    err.statusCode = 502;
+    throw err;
+  }
+  await invalidateCredential(address);
+  return readPassOnChain(address);
+}
+
 const PORT = Number(process.env.PORT || process.env.API_PORT || 8080);
 const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
 const QUEUE_DEPTH_THRESHOLD = Number(process.env.QUEUE_DEPTH_THRESHOLD || 50);
@@ -337,11 +372,11 @@ app.get("/verifications/:requestId", async (req, res) => {
 
 app.get("/credentials/:holderAddress", async (req, res) => {
   const address = req.params.holderAddress;
-  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+  if (!/^0x[a-fA-F0-9]{40}$/i.test(address)) {
     return res.status(400).json({ error: "Invalid holder address" });
   }
 
-  const [cached, onchain, pass] = await Promise.all([
+  let [cached, onchain, pass] = await Promise.all([
     getCachedCredential(address),
     readCredentialOnChain(address),
     readPassOnChain(address),
@@ -350,12 +385,25 @@ app.get("/credentials/:holderAddress", async (req, res) => {
   let row = onchain || (await getCredential(address)) || cached;
   if (!row) return res.status(404).json({ error: "No credential on record" });
 
+  const valid = !row.revoked && new Date(row.expiresAt) > new Date();
+  const mintRequested = req.query.mint === "1" || req.query.mint === "true";
+  if (!pass && valid && mintRequested) {
+    try {
+      pass = await mintMissingPass(address, {
+        tier: onchain?.tier || row.tier,
+        jurisdiction: onchain?.jurisdiction || row.jurisdiction,
+        expiresAt: row.expiresAt,
+      });
+    } catch (err) {
+      return res.status(err.statusCode || 502).json({ error: err.message });
+    }
+  }
+
   const region =
     normalizeJurisdiction(pass?.jurisdiction) ||
     normalizeJurisdiction(onchain?.jurisdiction) ||
     normalizeJurisdiction(row.jurisdiction);
   const tierValue = pass?.tier || onchain?.tier || row.tier;
-  const valid = !row.revoked && new Date(row.expiresAt) > new Date();
   const payload = {
     holderAddress: address,
     tier: tierLabel(tierValue) || row.tier,
@@ -367,15 +415,8 @@ app.get("/credentials/:holderAddress", async (req, res) => {
     valid,
     source: onchain ? "chain" : useMemory ? "memory" : "postgres",
   };
-  if (pass) {
-    payload.nft = {
-      address: pass.address,
-      tokenId: pass.tokenId,
-      tier: tierLabel(pass.tier) || payload.tier,
-      jurisdiction: normalizeJurisdiction(pass.jurisdiction) || region,
-      tokenURI: pass.tokenURI,
-    };
-  }
+  const nft = passToNft(pass, payload.tier, region);
+  if (nft) payload.nft = nft;
   await setCachedCredential(address, payload, Number(process.env.CRED_CACHE_TTL || 3));
   res.json(payload);
 });
@@ -399,36 +440,19 @@ app.post("/credentials/:holderAddress/nft", requireIssuer, async (req, res) => {
     return res.status(400).json({ error: "This pass has expired." });
   }
   if (pass) {
-    return res.json({ nft: pass, minted: false });
+    return res.json({ nft: passToNft(pass), minted: false });
   }
 
-  let tierNum;
   try {
-    tierNum = normalizeTier(row.tier);
-  } catch {
-    return res.status(400).json({ error: "Pass tier is missing." });
-  }
-  const region = normalizeJurisdiction(row.jurisdiction) || "US";
-  const expiresAtUnix = Math.floor(new Date(row.expiresAt).getTime() / 1000);
-  if (!Number.isFinite(expiresAtUnix) || expiresAtUnix <= 0) {
-    return res.status(400).json({ error: "Pass expiry is missing." });
-  }
-
-  const minted = await mintPassOnChain({
-    holderAddress: address,
-    tier: tierNum,
-    jurisdiction: region,
-    expiresAtUnix,
-  });
-  if (!minted?.txHash) {
-    return res.status(502).json({
-      error: minted?.error || "Could not mint the badge on BOT Chain. Check the issuer wallet and pass contract.",
+    const fresh = await mintMissingPass(address, {
+      tier: onchain?.tier || row.tier,
+      jurisdiction: onchain?.jurisdiction || row.jurisdiction,
+      expiresAt: row.expiresAt,
     });
+    res.json({ nft: passToNft(fresh), minted: true });
+  } catch (err) {
+    res.status(err.statusCode || 502).json({ error: err.message });
   }
-
-  const fresh = await readPassOnChain(address);
-  await invalidateCredential(address);
-  res.json({ nft: fresh, minted: true, txHash: minted.txHash });
 });
 
 app.post("/credentials/:holderAddress/renew", requireIssuer, async (req, res) => {
@@ -645,9 +669,13 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+app.use((req, res) => {
+  res.status(404).json({ error: `${req.method} ${req.path} not found` });
+});
+
 app.use((err, _req, res, _next) => {
   console.error("[api]", err);
-  res.status(500).json({ error: err.message || "Internal error" });
+  res.status(err.statusCode || 500).json({ error: err.message || "Internal error" });
 });
 
 async function start() {
