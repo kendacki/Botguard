@@ -7,10 +7,16 @@ const useMemory = process.env.BOTGUARD_MEMORY_MODE === "1" || process.env.DATABA
 function demoIssuerAddress() {
   if (process.env.ISSUER_ADDRESS) return process.env.ISSUER_ADDRESS;
   try {
-    const file = path.join(__dirname, "..", "..", "deployments", "botchainTestnet.json");
-    if (fs.existsSync(file)) {
-      const deployed = JSON.parse(fs.readFileSync(file, "utf8"));
-      return deployed.issuer || deployed.deployer;
+    const candidateFiles = [
+      path.join(__dirname, "..", "..", "deployments", "botchainMainnet.json"),
+      path.join(__dirname, "..", "..", "deployments", "botchainTestnet.json"),
+      path.join(__dirname, "..", "..", "deployments", "localhost.json"),
+    ];
+    for (const file of candidateFiles) {
+      if (fs.existsSync(file)) {
+        const deployed = JSON.parse(fs.readFileSync(file, "utf8"));
+        return deployed.issuer || deployed.deployer;
+      }
     }
   } catch {
     /* fall through */

@@ -6,10 +6,12 @@ const IS_PROD = process.env.NODE_ENV === "production";
 
 function loadDeployment() {
   const root = path.join(__dirname, "..", "..", "deployments");
+  const preferred = process.env.BOTCHAIN_NETWORK === "mainnet"
+    ? ["botchainMainnet.json", "botchainTestnet.json", "localhost.json"]
+    : ["botchainMainnet.json", "botchainTestnet.json", "localhost.json"];
   const candidates = [
     process.env.DEPLOYMENT_FILE,
-    "botchainTestnet.json",
-    "localhost.json",
+    ...preferred,
   ].filter(Boolean);
 
   for (const name of candidates) {
@@ -66,7 +68,7 @@ const REGISTRY_ABI = [
 ];
 
 function getProvider() {
-  const rpc = process.env.CHAIN_RPC_URL || process.env.BOTCHAIN_TESTNET_RPC;
+  const rpc = process.env.CHAIN_RPC_URL || process.env.BOTCHAIN_RPC_URL || process.env.BOTCHAIN_MAINNET_RPC || process.env.BOTCHAIN_TESTNET_RPC;
   if (!rpc) return null;
   return new ethers.JsonRpcProvider(rpc);
 }
@@ -95,7 +97,7 @@ function getIssuerWallet() {
 }
 
 function assertIssuerReady() {
-  const rpc = process.env.CHAIN_RPC_URL || process.env.BOTCHAIN_TESTNET_RPC;
+  const rpc = process.env.CHAIN_RPC_URL || process.env.BOTCHAIN_RPC_URL || process.env.BOTCHAIN_MAINNET_RPC || process.env.BOTCHAIN_TESTNET_RPC;
   if (!rpc) return { ok: true, mode: "offchain" };
   if (!getRegistryAddress()) {
     return { ok: false, error: "CREDENTIAL_REGISTRY_ADDRESS (or deployment file) required when CHAIN_RPC_URL is set" };

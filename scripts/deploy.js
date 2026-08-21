@@ -6,11 +6,12 @@ async function main() {
   const signers = await hre.ethers.getSigners();
   if (!signers.length) {
     throw new Error(
-      "No deployer account. Set DEPLOYER_PRIVATE_KEY in .env for botchainTestnet."
+      "No deployer account. Set DEPLOYER_PRIVATE_KEY in .env for the target BOT Chain network."
     );
   }
 
   const isLocal = ["hardhat", "localhost"].includes(hre.network.name);
+  const isMainnet = ["botchainMainnet", "mainnet"].includes(hre.network.name);
   const deployer = signers[0];
   const issuer = isLocal && signers[1] ? signers[1] : deployer;
   const monitor = isLocal && signers[2] ? signers[2] : deployer;
@@ -91,26 +92,32 @@ async function main() {
   const verificationPassAddress = await verificationPass.getAddress();
   console.log("VerificationPass:", verificationPassAddress);
 
-  // Seed a demo credential so gated-transfer demos work immediately.
-  const commitment = hre.ethers.keccak256(hre.ethers.toUtf8Bytes("demo-verification-record"));
-  const jurisdiction = hre.ethers.hexlify(hre.ethers.toUtf8Bytes("NG"));
-  await (
-    await credentialRegistry
-      .connect(issuer)
-      .issueCredential(holder.address, commitment, 1, jurisdiction, 365 * 24 * 60 * 60)
-  ).wait();
-  await (
-    await verificationPass.connect(issuer).issuePass(
-      holder.address,
-      1,
-      jurisdiction,
-      BigInt(Math.floor(Date.now() / 1000)) + 365n * 24n * 60n * 60n
-    )
-  ).wait();
-  await (await rwaToken.mint(holder.address, hre.ethers.parseEther("1000"))).wait();
+  let demoSeed = null;
+  if (!isMainnet && (isLocal || hre.network.name === "botchainTestnet")) {
+    // Seed a demo credential so gated-transfer demos work immediately on local/testnet.
+    const commitment = hre.ethers.keccak256(hre.ethers.toUtf8Bytes("demo-verification-record"));
+    const jurisdiction = hre.ethers.hexlify(hre.ethers.toUtf8Bytes("NG"));
+    await (
+      await credentialRegistry
+        .connect(issuer)
+        .issueCredential(holder.address, commitment, 1, jurisdiction, 365 * 24 * 60 * 60)
+    ).wait();
+    await (
+      await verificationPass.connect(issuer).issuePass(
+        holder.address,
+        1,
+        jurisdiction,
+        BigInt(Math.floor(Date.now() / 1000)) + 365n * 24n * 60n * 60n
+      )
+    ).wait();
+    await (await rwaToken.mint(holder.address, hre.ethers.parseEther("1000"))).wait();
+    demoSeed = { seededForDemo: true, holder: holder.address };
+  }
 
   const network = await hre.ethers.provider.getNetwork();
   const rpc =
+    process.env.BOTCHAIN_RPC_URL ||
+    process.env.BOTCHAIN_MAINNET_RPC ||
     process.env.BOTCHAIN_TESTNET_RPC ||
     (isLocal ? "http://127.0.0.1:8545" : "https://rpc.bohr.life");
 
@@ -124,6 +131,7 @@ async function main() {
     holder: holder.address,
     treasury: treasuryAddress,
     verificationFee: verificationFee.toString(),
+    demoSeed,
     contracts: {
       IssuerRegistry: issuerRegistryAddress,
       CredentialRegistry: credentialRegistryAddress,

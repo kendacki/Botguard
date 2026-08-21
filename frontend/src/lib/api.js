@@ -23,6 +23,18 @@ export async function api(path, options = {}) {
   return data;
 }
 
+export async function checkWalletStatus({ wallet, minTier = "RETAIL", jurisdiction, apiBaseUrl = API }) {
+  if (!wallet) throw new Error("wallet is required");
+  const params = new URLSearchParams({ minTier });
+  if (jurisdiction) params.set("jurisdiction", jurisdiction);
+  const response = await fetch(`${apiBaseUrl}/status/${wallet}?${params.toString()}`);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `Verification status check failed (${response.status})`);
+  }
+  return data;
+}
+
 export function shortAddr(addr) {
   if (!addr) return "";
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;

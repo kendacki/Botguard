@@ -11,6 +11,7 @@ const POLL_MS = Number(process.env.INDEXER_POLL_MS || 2000);
 function loadDeployment() {
   const candidates = [
     process.env.DEPLOYMENT_FILE,
+    path.join(__dirname, "..", "..", "deployments", "botchainMainnet.json"),
     path.join(__dirname, "..", "..", "deployments", "botchainTestnet.json"),
     path.join(__dirname, "..", "..", "deployments", "localhost.json"),
     path.join(__dirname, "..", "..", "deployments", "hardhat.json"),
