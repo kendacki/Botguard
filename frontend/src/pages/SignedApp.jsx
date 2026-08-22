@@ -81,7 +81,7 @@ function passLabel({ valid, verification, feeEscrowed }) {
     return "Minting";
   }
   if (feeEscrowed) return "Paid";
-  return "Get started";
+  return "Ready";
 }
 
 function StatusPill({ ok, label, live = false }) {
@@ -288,9 +288,6 @@ export default function SignedApp({
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              {valid ? null : (
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand">Your pass</p>
-              )}
               <h1 className={`text-[1.65rem] font-semibold tracking-tight text-ink sm:text-3xl ${valid ? "" : "mt-1.5"}`}>
                 {valid ? "You're cleared." : "Verify once. Use it everywhere."}
               </h1>
@@ -332,16 +329,7 @@ export default function SignedApp({
 
               <div className="min-w-0 flex-1">
                 {valid ? null : (
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-mute">
-                      This wallet
-                    </p>
-                    <p className="mt-1 text-xl font-semibold tracking-tight text-ink">
-                      Not verified yet
-                    </p>
-                  </div>
-                </div>
+                  <p className="mt-1 text-xl font-semibold tracking-tight text-ink">Not verified yet</p>
                 )}
 
                 <button
@@ -356,13 +344,7 @@ export default function SignedApp({
                   <Copy size={12} />
                 </button>
 
-                <div className={`mt-4 grid gap-2 text-[11px] ${valid ? "grid-cols-2 text-white/80" : "grid-cols-3 text-mute"}`}>
-                  <div>
-                    <p className="font-medium opacity-80">Network</p>
-                    <p className={`mt-0.5 truncate text-sm font-semibold ${valid ? "text-white" : "text-ink"}`}>
-                      {chainLabel || "BOT Chain"}
-                    </p>
-                  </div>
+                <div className={`mt-4 grid gap-2 text-[11px] ${valid ? "grid-cols-2 text-white/80" : "grid-cols-2 text-mute"}`}>
                   <div>
                     <p className="font-medium opacity-80">Valid until</p>
                     <p className={`mt-0.5 truncate text-sm font-semibold ${valid ? "text-white" : "text-ink"}`}>
@@ -370,12 +352,10 @@ export default function SignedApp({
                     </p>
                   </div>
                   {valid ? null : (
-                  <div>
-                    <p className="font-medium opacity-80">Identity</p>
-                    <p className="mt-0.5 truncate text-sm font-semibold text-ink">
-                      Stays off-chain
-                    </p>
-                  </div>
+                    <div>
+                      <p className="font-medium opacity-80">Identity</p>
+                      <p className="mt-0.5 truncate text-sm font-semibold text-ink">Stays off-chain</p>
+                    </div>
                   )}
                 </div>
 

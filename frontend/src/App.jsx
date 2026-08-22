@@ -100,7 +100,7 @@ function StatusPill({ ok, label }) {
 export default function App() {
   const [account, setAccount] = useState("");
   const [tier, setTier] = useState("RETAIL");
-  const [jurisdiction, setJurisdiction] = useState("NG");
+  const [jurisdiction, setJurisdiction] = useState("US");
   const [verificationId, setVerificationId] = useState("");
   const [verification, setVerification] = useState(null);
   const [credential, setCredential] = useState(null);
