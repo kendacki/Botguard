@@ -437,7 +437,7 @@ export default function App() {
       if (!registryAddress) {
         try {
           const files = [
-            "/deployments/botchainTestnet.json",
+            "/deployments/botchainMainnet.json",
             "/deployments/localhost.json",
           ];
           for (const file of files) {
@@ -600,14 +600,14 @@ export default function App() {
 
     const eth = getInjectedProvider();
     if (!eth?.request) {
-      setError("Open MetaMask on BOT Chain Testnet, then tap Add to wallet.");
+      setError("Open MetaMask on BOT Chain Mainnet, then tap Add to wallet.");
       return;
     }
 
     let passAddress = credential?.nft?.address || VERIFICATION_PASS_ADDRESS;
     if (!passAddress) {
       try {
-        const dep = await fetch("/deployments/botchainTestnet.json").then((r) => (r.ok ? r.json() : null));
+        const dep = await fetch("/deployments/botchainMainnet.json").then((r) => (r.ok ? r.json() : null));
         passAddress = dep?.contracts?.VerificationPass || dep?.env?.VERIFICATION_PASS_ADDRESS;
       } catch {
         passAddress = null;
@@ -682,7 +682,7 @@ export default function App() {
         setSuccess("");
         return;
       }
-      setSuccess("Badge added. Check NFTs in MetaMask on BOT Chain Testnet.");
+      setSuccess("Badge added. Check NFTs in MetaMask on BOT Chain Mainnet.");
     } catch (err) {
       if (err?.code === 4001) {
         setError("Wallet declined the badge import.");
