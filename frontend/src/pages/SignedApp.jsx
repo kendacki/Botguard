@@ -112,8 +112,8 @@ function StatusRow({ icon: Icon, label, value }) {
         <Icon size={16} strokeWidth={1.9} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-medium text-mute">{label}</p>
-        <p className="truncate text-sm font-semibold text-ink">{value || "—"}</p>
+        {label ? <p className="text-[11px] font-medium text-mute">{label}</p> : null}
+        <p className={`truncate text-sm font-semibold text-ink ${label ? "" : "mt-0"}`}>{value || "—"}</p>
       </div>
     </div>
   );
@@ -648,7 +648,7 @@ export default function SignedApp({
             <StatusRow icon={RefreshCw} label="Request" value={verification?.status || "Ready"} />
             <StatusRow icon={ShieldCheck} label="Expires" value={formatExpiry(credential?.expiresAt)} />
             <div className="sm:col-span-2">
-              <StatusRow icon={Sparkles} label="Network" value={chainLabel || null} />
+              <StatusRow icon={Sparkles} label="" value={chainLabel || "BOT Chain"} />
             </div>
           </div>
 

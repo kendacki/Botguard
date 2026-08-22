@@ -1,7 +1,7 @@
 {
   "name": "botguard",
   "version": "1.0.0",
-  "description": "BOTGUARD — Compliance Credential Registry for the BOT Chain RWA Ecosystem",
+  "description": "BOTGUARD \u2014 Compliance Credential Registry for the BOT Chain RWA Ecosystem",
   "private": true,
   "engines": {
     "node": ">=20"
@@ -20,7 +20,7 @@
     "monitor": "node services/monitor/agent.js",
     "sim": "python simulation/botguard_sim.py",
     "frontend": "npm --prefix frontend run dev",
-    "dev": "node scripts/dev.js"
+    "dev": "node init && node scripts/dev.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

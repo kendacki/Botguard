@@ -5,8 +5,6 @@ cache/
 artifacts/
 coverage/
 typechain-types/
-.env
-.env.*
 !.env.example
 !frontend/.env.example
 !**/.env.example
@@ -19,9 +17,9 @@ __pycache__/
 .venv/
 simulation/.venv/
 infra/secrets/*.pem
-.vscode/
 .idea/
 .vercel
 branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
+config.bat
